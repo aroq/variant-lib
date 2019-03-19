@@ -1,0 +1,129 @@
+tasks:
+  git:
+    tasks:
+      init:
+        script: |
+          cat <<EOF
+          git init .
+          git remote rm origin || true
+          git remote add -t {{.git.branch}} -f origin  {{.git.repo}}
+          EOF
+      pull:
+        script: |
+          cat <<EOF
+          git checkout {{.git.branch}}
+          git reset --hard origin/{{.git.branch}}
+          git pull origin {{.git.branch}}
+          EOF
+
+  general:
+    tasks:
+      source_key_path:
+        script: |
+          if [ -n {{.goofys.mount.mount_point}} ]; then
+            echo {{.goofys.mount.mount_point}}/.ssh
+          fi
+      setup:
+        tasks:
+          keys:
+            inputs:
+              - name: general.source_key_path
+            steps:
+            - task: goofys.mount
+            - task: ssh.copy_id_rsa
+              arguments:
+                source_key_path: '{{.general.source_key_path}}'
+
+  composer:
+    tasks:
+      install:
+        script: |
+          cat <<EOF
+          composer install --prefer-dist --optimize-autoloader
+          EOF
+
+  goofys:
+    tasks:
+      mount:
+        inputs:
+        - name: mount_point
+          type: string
+          default: ""
+        - name: bucket
+          type: string
+          default: ""
+        - name: mode
+          type: string
+          default: "0600"
+
+        script: |
+          echo "---> Goofys :: Mount bucket"
+          if [ -n {{.goofys.mount.mount_point}} ]; then
+            mkdir -p {{.mount_point}}
+            (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
+            sleep 5
+          fi
+
+  drupal:
+    tasks:
+      files:
+        tasks:
+          fix_permissions:
+            script: |
+              cat <<EOF
+              if [ -d docroot/sites/default ]; then chmod 755 docroot/sites/default; fi && \
+              if [ -f docroot/sites/default/services.yml ]; then chmod 644 docroot/sites/default/services.yml; fi && \
+              if [ -f docroot/sites/default/default.services.yml ]; then chmod 644 docroot/sites/default/default.services.yml; fi && \
+              if [ -f docroot/sites/default/settings.php ]; then chmod 644 docroot/sites/default/settings.php; fi && \
+              if [ -f docroot/sites/default/default.settings.php ]; then chmod 644 docroot/sites/default/default.settings.php; fi && \
+              if [ -d docroot/sites/default/files ]; then chmod 755 docroot/sites/default/files; fi
+              EOF
+          shared_files_link:
+            script: |
+              cat <<EOF
+              ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/docroot/sites/default/files \
+              {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/docroot/sites/default/files
+              EOF
+          env_file_link:
+            script: |
+              cat <<EOF
+              ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/environments/env.settings.php \
+              {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/environments/env.settings.php
+              EOF
+
+  ssh:
+    tasks:
+      copy_id_rsa:
+        inputs:
+        - name: source_key_path
+          type: string
+          default: ""
+        - name: target_key_path
+          type: string
+          default: "/root/.ssh"
+        - name: source_key_name
+          type: string
+          default: "id_rsa"
+        - name: target_key_name
+          type: string
+          default: "id_rsa"
+        script: |
+          echo "---> SSH :: Copy id_rsa key"
+          cp -fR {{.source_key_path}}/{{.source_key_name}} {{.target_key_path}}/{{.target_key_name}}
+
+      exec:
+        inputs:
+        - name: exec_dir
+          type: string
+        - name: exec_dir_suffix
+          type: string
+          default: ""
+        - name: title
+          type: string
+          default: ""
+        - name: cmd
+          type: string
+          default: "pwd"
+        script: |
+          echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
+          ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}"
