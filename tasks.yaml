@@ -67,7 +67,7 @@ tasks:
         inputs:
         - name: mount_point
           type: string
-          default: ""
+          default: "/root/.secrets"
         - name: bucket
           type: string
           default: ""
