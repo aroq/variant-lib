@@ -1,3 +1,22 @@
+# Register parameters so tasks can use them as parameters and make them available as CLI arguments.
+parameters:
+- name: git.repo
+  type: string
+- name: git.branch
+  type: string
+- name: ssh.server.project_root_dir
+  type: string
+- name: ssh.server.project_subdirectory
+  type: string
+- name: ssh.server.user
+  type: string
+- name: ssh.server.host
+  type: string
+- name: goofys.mount.mount_point
+  type: string
+- name: goofys.mount.bucket
+  type: string
+
 tasks:
   git:
     tasks:
@@ -59,9 +78,11 @@ tasks:
         script: |
           echo "---> Goofys :: Mount bucket"
           if [ -n {{.goofys.mount.mount_point}} ]; then
-            mkdir -p {{.mount_point}}
-            (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
-            sleep 5
+            if [ ! -d {{.mount_point}} ]; then
+              mkdir -p {{.mount_point}}
+              (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
+              sleep 5
+            fi
           fi
 
   drupal:
@@ -127,3 +148,65 @@ tasks:
         script: |
           echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
           ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}"
+
+  stages:
+    tasks:
+      dev:
+        # Register parameters (in fact other tasks with the same name) so they can by used as tasks arguments in steps.
+        parameters:
+        - name: general.setup.keys
+        tasks:
+          init:
+            # Actual init would be executed as part of above "parameters" processing.
+            script: echo "Init..."
+          deploy:
+            parameters:
+            - name: git.init
+            - name: git.pull
+            - name: drupal.files.fix_permissions
+            - name: drupal.files.shared_files_link
+            - name: drupal.files.env_file_link
+            tasks:
+              before:
+                steps:
+                # Example of executing task with dynamic argument from parameter.
+                - task: ssh.exec
+                  arguments:
+                    title: "Status"
+                    cmd: |
+                      echo "SSH server host: {{.ssh.server.host}}"
+                - task: ssh.exec
+                  arguments:
+                    title: "Drupal :: Files :: Fix permissions"
+                    cmd: '{{.drupal.files.fix_permissions}}'
+                - task: ssh.exec
+                  arguments:
+                    title: "Git :: init"
+                    cmd: '{{.git.init}}'
+              pull:
+                steps:
+                - task: ssh.exec
+                  arguments:
+                    title: "Git :: pull"
+                    cmd: '{{.git.pull}}'
+              build:
+                steps:
+                - task: ssh.exec
+                  arguments:
+                    title: "Composer :: install"
+                    cmd: composer install --prefer-dist --optimize-autoloader
+              after:
+                steps:
+                - task: ssh.exec
+                  arguments:
+                    title: "Drupal :: Files :: Shared files link"
+                    cmd: '{{.drupal.files.shared_files_link}}'
+                - task: ssh.exec
+                  arguments:
+                    title: "Drupal :: Files :: Environment file link"
+                    cmd: '{{.drupal.files.env_file_link}}'
+                - task: ssh.exec
+                  arguments:
+                    title: "Drupal :: Files :: Fix permissions"
+                    cmd: '{{.drupal.files.fix_permissions}}'
+
