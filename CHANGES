@@ -1,3 +1,6 @@
+Version 0.1.2:
+ - Add default value for goofys mount_point
+
 Version 0.1.1:
  - Update variant tasks
 
