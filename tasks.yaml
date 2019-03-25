@@ -1,29 +1,9 @@
 # Register parameters so tasks can use them as parameters and make them available as CLI arguments.
 parameters:
-- name: git.name
-  type: string
-- name: git.email
-  type: string
 - name: git.repo
   type: string
 - name: git.branch
   type: string
-- name: docman.repo
-  type: string
-- name: docman.branch
-  type: string
-- name: docman.build.state
-  type: string
-- name: docman.build.config
-  type: string
-  default: "{}"
-- name: artifact.git.release
-  type: string
-- name: artifact.git.repo
-  type: string
-- name: ansible.deploy.vars
-  type: string
-  default: "{}"
 - name: ssh.server.project_root_dir
   type: string
 - name: ssh.server.project_subdirectory
@@ -40,10 +20,6 @@ parameters:
 tasks:
   git:
     tasks:
-      config:
-        script: |
-          git config --global user.name "{{.git.name}}"
-          git config --global user.email "{{.git.email}}"
       init:
         script: |
           cat <<EOF
@@ -135,43 +111,6 @@ tasks:
               ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/environments/env.settings.php \
               {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/environments/env.settings.php
               EOF
-
-  docman:
-    tasks:
-      init:
-        script: |
-          echo "---> Docman :: Init {{.docman.repo}}"
-          rm -fR docman
-          docman init docman {{.docman.repo}} --branch={{.docman.branch}}
-      info:
-        script: |
-          echo "---> Docman :: Info"
-          cd docman
-          docman info full config.json
-      build:
-        script: |
-          echo "---> Docman :: Build {{.docman.build.state}}"
-          cd docman
-          pwd
-          ls -lah
-          docman build git_target {{.docman.build.state}} --config="{{.docman.build.config}}"
-
-  artifact:
-    tasks:
-      git:
-        script: |
-          echo "---> Artifact :: Git {{.artifact.git.release}}"
-          mkdir -p artifacts
-          git clone -b {{.artifact.git.release}} --single-branch --depth 1 {{.artifact.git.repo}} artifacts/master
-          tar -czf master.tar.gz -C artifacts/master .
-          rm -rf artifacts
-
-  ansible:
-    tasks:
-      deploy:
-        script: |
-          echo "---> Ansible :: Deploy"
-          ANSIBLE_CONFIG="ansible/ansible.cfg" ANSIBLE_SSH_ARGS="-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=/tmp/ansible-ssh-%h-%p-%r -o ForwardAgent=yes" ansible-playbook ansible/deployWithAnsistrano.yml -i ansible/inventory.yaml -e "{{.ansible.deploy.vars}}"
 
   ssh:
     tasks:
