@@ -159,20 +159,29 @@ tasks:
             tasks:
               before:
                 steps:
-                # Example of executing task with dynamic argument from parameter.
-                - task: ssh.exec
-                  arguments:
-                    title: "Status"
-                    cmd: |
-                      echo "SSH server host: {{.ssh.server.host}}"
-                - task: ssh.exec
-                  arguments:
-                    title: "Drupal :: Files :: Fix permissions"
-                    cmd: '{{.drupal.files.fix_permissions}}'
                 - task: ssh.exec
                   arguments:
                     title: "Git :: init"
                     cmd: '{{.git.init}}'
+                tasks:
+                  example:
+                    steps:
+                    # Example of executing task with dynamic argument from parameter.
+                    - task: ssh.exec
+                      arguments:
+                        title: "Status"
+                        cmd: |
+                          echo "SSH server host: {{.ssh.server.host}}"
+                  drupal:
+                    steps:
+                    - task: ssh.exec
+                      arguments:
+                        title: "Drupal :: Files :: Fix permissions"
+                        cmd: '{{.drupal.files.fix_permissions}}'
+                    - task: ssh.exec
+                      arguments:
+                        title: "Git :: init"
+                        cmd: '{{.git.init}}'
               pull:
                 steps:
                 - task: ssh.exec
@@ -185,20 +194,23 @@ tasks:
                   arguments:
                     title: "Composer :: install"
                     cmd: composer install --prefer-dist --optimize-autoloader
+
               after:
-                steps:
-                - task: ssh.exec
-                  arguments:
-                    title: "Drupal :: Files :: Shared files link"
-                    cmd: '{{.drupal.files.shared_files_link}}'
-                - task: ssh.exec
-                  arguments:
-                    title: "Drupal :: Files :: Environment file link"
-                    cmd: '{{.drupal.files.env_file_link}}'
-                - task: ssh.exec
-                  arguments:
-                    title: "Drupal :: Files :: Fix permissions"
-                    cmd: '{{.drupal.files.fix_permissions}}'
+                tasks:
+                  drupal:
+                    steps:
+                    - task: ssh.exec
+                      arguments:
+                        title: "Drupal :: Files :: Shared files link"
+                        cmd: '{{.drupal.files.shared_files_link}}'
+                    - task: ssh.exec
+                      arguments:
+                        title: "Drupal :: Files :: Environment file link"
+                        cmd: '{{.drupal.files.env_file_link}}'
+                    - task: ssh.exec
+                      arguments:
+                        title: "Drupal :: Files :: Fix permissions"
+                        cmd: '{{.drupal.files.fix_permissions}}'
 
 
 
