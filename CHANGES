@@ -1,3 +1,6 @@
+Version 0.1.5:
+ - Add drupal before & after tasks
+
 Version 0.1.4:
  - Update tasks
  - Merge pull request #2 from aroq/revert-1-master
