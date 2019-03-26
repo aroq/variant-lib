@@ -1,3 +1,8 @@
+Version 0.1.4:
+ - Update tasks
+ - Merge pull request #2 from aroq/revert-1-master
+ - Revert "Add docman build, artifact and ansible tasks."
+
 Version 0.1.3:
  - Merge pull request #1 from michael-molchanov/master
  - Add docman build, artifact and ansible tasks.
