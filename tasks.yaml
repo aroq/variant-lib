@@ -151,13 +151,6 @@ tasks:
           deploy:
             tasks:
               before:
-                parameters:
-                - name: git.init
-                steps:
-                - task: ssh.exec
-                  arguments:
-                    title: "Git :: init"
-                    cmd: '{{.git.init}}'
                 tasks:
                   example:
                     parameters:
@@ -171,17 +164,12 @@ tasks:
                           echo "SSH server host: {{.ssh.server.host}}"
                   drupal:
                     parameters:
-                    - name: git.init
                     - name: drupal.files.fix_permissions
                     steps:
                     - task: ssh.exec
                       arguments:
                         title: "Drupal :: Files :: Fix permissions"
                         cmd: '{{.drupal.files.fix_permissions}}'
-                    - task: ssh.exec
-                      arguments:
-                        title: "Git :: init"
-                        cmd: '{{.git.init}}'
               pull:
                 parameters:
                 - name: git.pull
