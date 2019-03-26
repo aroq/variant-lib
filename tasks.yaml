@@ -1,24 +1,10 @@
-# Register parameters so tasks can use them as parameters and make them available as CLI arguments.
-parameters:
-- name: git.repo
-  type: string
-- name: git.branch
-  type: string
-- name: ssh.server.project_root_dir
-  type: string
-- name: ssh.server.project_subdirectory
-  type: string
-- name: ssh.server.user
-  type: string
-- name: ssh.server.host
-  type: string
-- name: goofys.mount.mount_point
-  type: string
-- name: goofys.mount.bucket
-  type: string
-
 tasks:
   git:
+    parameters:
+    - name: git.repo
+      type: string
+    - name: git.branch
+      type: string
     tasks:
       init:
         script: |
@@ -37,21 +23,12 @@ tasks:
 
   general:
     tasks:
-      source_key_path:
-        script: |
-          if [ -n {{.goofys.mount.mount_point}} ]; then
-            echo {{.goofys.mount.mount_point}}/.ssh
-          fi
       setup:
         tasks:
           keys:
-            inputs:
-              - name: general.source_key_path
             steps:
             - task: goofys.mount
             - task: ssh.copy_id_rsa
-              arguments:
-                source_key_path: '{{.general.source_key_path}}'
 
   composer:
     tasks:
@@ -77,7 +54,7 @@ tasks:
 
         script: |
           echo "---> Goofys :: Mount bucket"
-          if [ -n {{.goofys.mount.mount_point}} ]; then
+          if [ -n {{.mount_point}} ]; then
             if [ ! -d {{.mount_point}} ]; then
               mkdir -p {{.mount_point}}
               (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
@@ -88,6 +65,9 @@ tasks:
   drupal:
     tasks:
       files:
+        parameters:
+        - name: ssh.server.project_root_dir
+        - name: ssh.server.project_subdirectory
         tasks:
           fix_permissions:
             script: |
@@ -113,12 +93,21 @@ tasks:
               EOF
 
   ssh:
+    parameters:
+    - name: ssh.server.project_root_dir
+      type: string
+    - name: ssh.server.project_subdirectory
+      type: string
+    - name: ssh.server.user
+      type: string
+    - name: ssh.server.host
+      type: string
     tasks:
       copy_id_rsa:
-        inputs:
+        parameters:
         - name: source_key_path
           type: string
-          default: ""
+          default: "/root/.secrets/.ssh"
         - name: target_key_path
           type: string
           default: "/root/.ssh"
@@ -133,7 +122,7 @@ tasks:
           cp -fR {{.source_key_path}}/{{.source_key_name}} {{.target_key_path}}/{{.target_key_name}}
 
       exec:
-        inputs:
+        parameters:
         - name: exec_dir
           type: string
         - name: exec_dir_suffix
@@ -166,6 +155,7 @@ tasks:
             - name: drupal.files.fix_permissions
             - name: drupal.files.shared_files_link
             - name: drupal.files.env_file_link
+            - name: ssh.server.host
             tasks:
               before:
                 steps:
@@ -209,4 +199,6 @@ tasks:
                   arguments:
                     title: "Drupal :: Files :: Fix permissions"
                     cmd: '{{.drupal.files.fix_permissions}}'
+
+
 
