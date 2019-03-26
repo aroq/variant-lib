@@ -149,15 +149,10 @@ tasks:
             # Actual init would be executed as part of above "parameters" processing.
             script: echo "Init..."
           deploy:
-            parameters:
-            - name: git.init
-            - name: git.pull
-            - name: drupal.files.fix_permissions
-            - name: drupal.files.shared_files_link
-            - name: drupal.files.env_file_link
-            - name: ssh.server.host
             tasks:
               before:
+                parameters:
+                - name: git.init
                 steps:
                 - task: ssh.exec
                   arguments:
@@ -165,6 +160,8 @@ tasks:
                     cmd: '{{.git.init}}'
                 tasks:
                   example:
+                    parameters:
+                    - name: ssh.server.host
                     steps:
                     # Example of executing task with dynamic argument from parameter.
                     - task: ssh.exec
@@ -173,6 +170,9 @@ tasks:
                         cmd: |
                           echo "SSH server host: {{.ssh.server.host}}"
                   drupal:
+                    parameters:
+                    - name: git.init
+                    - name: drupal.files.fix_permissions
                     steps:
                     - task: ssh.exec
                       arguments:
@@ -183,6 +183,8 @@ tasks:
                         title: "Git :: init"
                         cmd: '{{.git.init}}'
               pull:
+                parameters:
+                - name: git.pull
                 steps:
                 - task: ssh.exec
                   arguments:
@@ -198,6 +200,10 @@ tasks:
               after:
                 tasks:
                   drupal:
+                    parameters:
+                    - name: drupal.files.fix_permissions
+                    - name: drupal.files.shared_files_link
+                    - name: drupal.files.env_file_link
                     steps:
                     - task: ssh.exec
                       arguments:
