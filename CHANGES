@@ -1,3 +1,6 @@
+Version 0.1.8:
+ - Add drupal build composer install task
+
 Version 0.1.7:
  - Update tasks
 
