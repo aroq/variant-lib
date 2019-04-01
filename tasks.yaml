@@ -179,11 +179,17 @@ tasks:
                     title: "Git :: pull"
                     cmd: '{{.git.pull}}'
               build:
-                steps:
-                - task: ssh.exec
-                  arguments:
-                    title: "Composer :: install"
-                    cmd: composer install --prefer-dist --optimize-autoloader
+                tasks:
+                  drupal:
+                    tasks:
+                      composer:
+                        tasks:
+                          install:
+                            steps:
+                            - task: ssh.exec
+                              arguments:
+                                title: "Composer :: install"
+                                cmd: composer install --prefer-dist --optimize-autoloader
 
               after:
                 tasks:
@@ -205,6 +211,4 @@ tasks:
                       arguments:
                         title: "Drupal :: Files :: Fix permissions"
                         cmd: '{{.drupal.files.fix_permissions}}'
-
-
 
