@@ -120,7 +120,7 @@ tasks:
         script: |
           echo "---> SSH :: Copy id_rsa key"
           cp -fR {{.source_key_path}}/{{.source_key_name}} {{.target_key_path}}/{{.target_key_name}}
-
+      # Deprecated, use "exec" instead of "exec"
       exec:
         parameters:
         - name: exec_dir
@@ -137,6 +137,42 @@ tasks:
         script: |
           echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
           ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}"
+  exec:
+    parameters:
+    - name: ssh.server.project_root_dir
+      type: string
+    - name: ssh.server.project_subdirectory
+      type: string
+    - name: ssh.server.user
+      type: string
+    - name: ssh.server.host
+      type: string
+    - name: exec_dir
+      type: string
+    - name: exec_dir_suffix
+      type: string
+      default: ""
+    - name: title
+      type: string
+      default: ""
+    - name: cmd
+      type: string
+      default: "pwd"
+    - name: mode
+      type: string
+      # Possible values: "ssh", "local".
+      default: local
+    script: |
+      if [ "{{ .mode }}" = "ssh" ]; then
+        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
+        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}"
+      elif [ "{{ .mode }}" = "local" ]; then
+        echo "---> {{.title}} :: Executing command: \"{{.cmd}}\" "
+        set -e;
+        {{.cmd}}
+      else
+        echo "exec mode is not defined properly"
+      fi
 
   stages:
     tasks:
@@ -157,7 +193,7 @@ tasks:
                     - name: ssh.server.host
                     steps:
                     # Example of executing task with dynamic argument from parameter.
-                    - task: ssh.exec
+                    - task: exec
                       arguments:
                         title: "Status"
                         cmd: |
@@ -166,7 +202,7 @@ tasks:
                     parameters:
                     - name: drupal.files.fix_permissions
                     steps:
-                    - task: ssh.exec
+                    - task: exec
                       arguments:
                         title: "Drupal :: Files :: Fix permissions"
                         cmd: '{{.drupal.files.fix_permissions}}'
@@ -174,7 +210,7 @@ tasks:
                 parameters:
                 - name: git.pull
                 steps:
-                - task: ssh.exec
+                - task: exec
                   arguments:
                     title: "Git :: pull"
                     cmd: '{{.git.pull}}'
@@ -186,7 +222,7 @@ tasks:
                         tasks:
                           install:
                             steps:
-                            - task: ssh.exec
+                            - task: exec
                               arguments:
                                 title: "Composer :: install"
                                 cmd: composer install --prefer-dist --optimize-autoloader
@@ -199,16 +235,15 @@ tasks:
                     - name: drupal.files.shared_files_link
                     - name: drupal.files.env_file_link
                     steps:
-                    - task: ssh.exec
+                    - task: exec
                       arguments:
                         title: "Drupal :: Files :: Shared files link"
                         cmd: '{{.drupal.files.shared_files_link}}'
-                    - task: ssh.exec
+                    - task: exec
                       arguments:
                         title: "Drupal :: Files :: Environment file link"
                         cmd: '{{.drupal.files.env_file_link}}'
-                    - task: ssh.exec
+                    - task: exec
                       arguments:
                         title: "Drupal :: Files :: Fix permissions"
                         cmd: '{{.drupal.files.fix_permissions}}'
-
