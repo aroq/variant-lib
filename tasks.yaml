@@ -26,9 +26,20 @@ tasks:
       setup:
         tasks:
           keys:
+            parameters:
+            - name: enabled
+              type: string
+              default: true
             steps:
-            - task: goofys.mount
-            - task: ssh.copy_id_rsa
+            - if:
+              - script: |
+                  if [ "{{ .enabled }}" != "true" ]; then
+                    echo Enabled: {{ .enabled }}
+                    exit 1
+                  fi
+              then:
+              - task: goofys.mount
+              - task: ssh.copy_id_rsa
 
   composer:
     tasks:
@@ -170,6 +181,11 @@ tasks:
         echo "---> {{.title}} :: Executing command: \"{{.cmd}}\" "
         set -e;
         {{.cmd}}
+      elif [ "{{ .mode }}" = "gitlab_local" ]; then
+        echo "---> {{.title}} :: Executing command: \"{{.cmd}}\" "
+        set -e;
+        cd {{.exec_dir}}/{{.exec_dir_suffix}};
+        {{.cmd}}
       else
         echo "exec mode is not defined properly"
       fi
@@ -247,3 +263,4 @@ tasks:
                       arguments:
                         title: "Drupal :: Files :: Fix permissions"
                         cmd: '{{.drupal.files.fix_permissions}}'
+
