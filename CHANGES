@@ -1,3 +1,6 @@
+Version 0.1.12:
+ - Fix goofyx mount enabled
+
 Version 0.1.11:
  - Add ssh_sudo exec mode
 
