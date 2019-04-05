@@ -1,3 +1,6 @@
+Version 0.1.11:
+ - Add ssh_sudo exec mode
+
 Version 0.1.10:
  - Add gitlab_local mode for exec
 
