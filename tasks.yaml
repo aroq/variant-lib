@@ -29,7 +29,7 @@ tasks:
             parameters:
             - name: enabled
               type: string
-              default: true
+              default: false
             steps:
             - if:
               - script: |
@@ -173,10 +173,15 @@ tasks:
       type: string
       # Possible values: "ssh", "local".
       default: local
+    - name: sudo_user
+      type: string
     script: |
       if [ "{{ .mode }}" = "ssh" ]; then
         echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
         ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}"
+      elif [ "{{ .mode }}" = "ssh_sudo" ]; then
+        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host as sudo user \"{{.sudo_user}}\": {{.ssh.server.user}}@{{.ssh.server.host}}"
+        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "sudo -u {{.sudo_user}} bash -c 'set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}'"
       elif [ "{{ .mode }}" = "local" ]; then
         echo "---> {{.title}} :: Executing command: \"{{.cmd}}\" "
         set -e;
