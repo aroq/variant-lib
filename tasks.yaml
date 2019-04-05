@@ -29,7 +29,7 @@ tasks:
             parameters:
             - name: enabled
               type: string
-              default: false
+              default: "false"
             steps:
             - if:
               - script: |
