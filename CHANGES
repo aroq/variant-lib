@@ -1,3 +1,6 @@
+Version 0.1.14:
+ - Change exec_dir_suffix to subdir for exec command
+
 Version 0.1.13:
  - Add git init wrapper task
 
