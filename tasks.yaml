@@ -205,6 +205,16 @@ tasks:
           init:
             # Actual init would be executed as part of above "parameters" processing.
             script: echo "Init..."
+            tasks:
+              git:
+                parameters:
+                - name: git.init
+                steps:
+                - task: exec
+                  arguments:
+                    title: "Git :: Init"
+                    cmd: '{{.git.init}}'
+
           deploy:
             tasks:
               before:
