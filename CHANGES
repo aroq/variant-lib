@@ -1,3 +1,6 @@
+Version 0.1.13:
+ - Add git init wrapper task
+
 Version 0.1.12:
  - Fix goofyx mount enabled
 
