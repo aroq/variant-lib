@@ -66,10 +66,13 @@ tasks:
         script: |
           echo "---> Goofys :: Mount bucket"
           if [ -n {{.mount_point}} ]; then
-            if [ ! -d {{.mount_point}} ]; then
+            if [ ! -d {{.mount_point}}/.ssh ]; then
+              echo "Mount point: {{.mount_point}}"
               mkdir -p {{.mount_point}}
               (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
               sleep 5
+              ls -al {{.mount_point}}
+              ls -al {{.mount_point}}/.ssh
             fi
           fi
 
@@ -136,7 +139,7 @@ tasks:
         parameters:
         - name: exec_dir
           type: string
-        - name: exec_dir_suffix
+        - name: subdir
           type: string
           default: ""
         - name: title
@@ -146,8 +149,8 @@ tasks:
           type: string
           default: "pwd"
         script: |
-          echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
-          ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}"
+          echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
+          ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}"
   exec:
     parameters:
     - name: ssh.server.project_root_dir
@@ -160,7 +163,7 @@ tasks:
       type: string
     - name: exec_dir
       type: string
-    - name: exec_dir_suffix
+    - name: subdir
       type: string
       default: ""
     - name: title
@@ -177,19 +180,29 @@ tasks:
       type: string
     script: |
       if [ "{{ .mode }}" = "ssh" ]; then
-        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
-        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}"
+        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
+        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}"
       elif [ "{{ .mode }}" = "ssh_sudo" ]; then
-        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}\" through SSH on remote host as sudo user \"{{.sudo_user}}\": {{.ssh.server.user}}@{{.ssh.server.host}}"
-        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "sudo -u {{.sudo_user}} bash -c 'set -e; cd {{.exec_dir}}/{{.exec_dir_suffix}}; {{.cmd}}'"
-      elif [ "{{ .mode }}" = "local" ]; then
+        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\" through SSH on remote host as sudo user \"{{.sudo_user}}\": {{.ssh.server.user}}@{{.ssh.server.host}}"
+        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "sudo -u {{.sudo_user}} bash -c 'set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}'"
+      elif [ "{{ .mode }}" = "local_current_dir" ]; then
         echo "---> {{.title}} :: Executing command: \"{{.cmd}}\" "
         set -e;
         {{.cmd}}
-      elif [ "{{ .mode }}" = "gitlab_local" ]; then
-        echo "---> {{.title}} :: Executing command: \"{{.cmd}}\" "
+      elif [ "{{ .mode }}" = "local" ]; then
+        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\""
         set -e;
-        cd {{.exec_dir}}/{{.exec_dir_suffix}};
+        cd {{.exec_dir}}/{{.subdir}};
+        {{.cmd}}
+      elif [ "{{ .mode }}" = "gitlab_docker" ]; then
+        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\""
+        set -e;
+        cd {{.exec_dir}}/{{.subdir}};
+        {{.cmd}}
+      elif [ "{{ .mode }}" = "gitlab_shell" ]; then
+        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\""
+        set -e;
+        cd {{.exec_dir}}/{{.subdir}};
         {{.cmd}}
       else
         echo "exec mode is not defined properly"
