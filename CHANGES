@@ -1,3 +1,6 @@
+Version 0.1.15:
+ - Remove debug echo messages
+
 Version 0.1.14:
  - Change exec_dir_suffix to subdir for exec command
 
