@@ -66,13 +66,10 @@ tasks:
         script: |
           echo "---> Goofys :: Mount bucket"
           if [ -n {{.mount_point}} ]; then
-            if [ ! -d {{.mount_point}}/.ssh ]; then
-              echo "Mount point: {{.mount_point}}"
+            if [ ! -d {{.mount_point}} ]; then
               mkdir -p {{.mount_point}}
               (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
               sleep 5
-              ls -al {{.mount_point}}
-              ls -al {{.mount_point}}/.ssh
             fi
           fi
 
