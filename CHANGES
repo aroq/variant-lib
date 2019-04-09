@@ -1,3 +1,6 @@
+Version 0.1.17:
+ - Fix shared_files_link task shared files path
+
 Version 0.1.16:
  - Add site_dir param for drupal files tasks
 
