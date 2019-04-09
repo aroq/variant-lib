@@ -96,7 +96,7 @@ tasks:
           shared_files_link:
             script: |
               cat <<EOF
-              ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/{{.site_dir}}/docroot/sites/{{.site_dir}}/files \
+              ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files \
               {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files
               EOF
           env_file_link:
