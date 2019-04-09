@@ -1,3 +1,6 @@
+Version 0.1.16:
+ - Add site_dir param for drupal files tasks
+
 Version 0.1.15:
  - Remove debug echo messages
 
