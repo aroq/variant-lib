@@ -84,27 +84,33 @@ tasks:
           default: default
         tasks:
           fix_permissions:
-            script: |
-              cat <<EOF
-              if [ -d docroot/sites/{{.site_dir}} ]; then chmod 755 docroot/sites/{{.site_dir}}; fi && \
-              if [ -f docroot/sites/{{.site_dir}}/services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/services.yml; fi && \
-              if [ -f docroot/sites/{{.site_dir}}/default.services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/default.services.yml; fi && \
-              if [ -f docroot/sites/{{.site_dir}}/settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/settings.php; fi && \
-              if [ -f docroot/sites/{{.site_dir}}/default.settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/default.settings.php; fi && \
-              if [ -d docroot/sites/{{.site_dir}}/files ]; then chmod 755 docroot/sites/{{.site_dir}}/files; fi
-              EOF
+            steps:
+            - task: exec
+              arguments:
+                title: "Drupal :: Files :: Fix permissions"
+                cmd: |
+                  if [ -d docroot/sites/{{.site_dir}} ]; then chmod 755 docroot/sites/{{.site_dir}}; fi && \
+                  if [ -f docroot/sites/{{.site_dir}}/services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/services.yml; fi && \
+                  if [ -f docroot/sites/{{.site_dir}}/default.services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/default.services.yml; fi && \
+                  if [ -f docroot/sites/{{.site_dir}}/settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/settings.php; fi && \
+                  if [ -f docroot/sites/{{.site_dir}}/default.settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/default.settings.php; fi && \
+                  if [ -d docroot/sites/{{.site_dir}}/files ]; then chmod 755 docroot/sites/{{.site_dir}}/files; fi
           shared_files_link:
-            script: |
-              cat <<EOF
-              ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files \
-              {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files
-              EOF
+            steps:
+            - task: exec
+              arguments:
+                title: "Drupal :: Files :: Shared files link"
+                cmd: |
+                  ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files \
+                  {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files
           env_file_link:
-            script: |
-              cat <<EOF
-              ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/environments/env.settings.php \
-              {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/environments/env.settings.php
-              EOF
+            steps:
+            - task: exec
+              arguments:
+                title: "Drupal :: Files :: Environment file link"
+                cmd: |
+                  ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/environments/env.settings.php \
+                  {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/environments/env.settings.php
 
   ssh:
     parameters:
@@ -246,15 +252,12 @@ tasks:
                     tasks:
                       site:
                         parameters:
-                        - name: drupal.files.fix_permissions
                         - name: site_dir
                           type: string
                           default: default
                         steps:
-                        - task: exec
+                        - task: drupal.files.fix_permissions
                           arguments:
-                            title: "Drupal :: Files :: Fix permissions"
-                            cmd: '{{.drupal.files.fix_permissions}}'
                             site_dir: '{{.site_dir}}'
               pull:
                 parameters:
@@ -282,29 +285,18 @@ tasks:
                   drupal:
                     tasks:
                       common:
-                        parameters:
-                        - name: drupal.files.env_file_link
                         steps:
-                        - task: exec
-                          arguments:
-                            title: "Drupal :: Files :: Environment file link"
-                            cmd: '{{.drupal.files.env_file_link}}'
+                        - task: drupal.files.env_file_link
                       site:
                         parameters:
-                        - name: drupal.files.fix_permissions
-                        - name: drupal.files.shared_files_link
                         - name: site_dir
                           type: string
                           default: default
                         steps:
-                        - task: exec
+                        - task: drupal.files.shared_files_link
                           arguments:
-                            title: "Drupal :: Files :: Shared files link"
-                            cmd: '{{.drupal.files.shared_files_link}}'
                             site_dir: '{{.site_dir}}'
-                        - task: exec
+                        - task: drupal.files.fix_permissions
                           arguments:
-                            title: "Drupal :: Files :: Fix permissions"
-                            cmd: '{{.drupal.files.fix_permissions}}'
                             site_dir: '{{.site_dir}}'
 
