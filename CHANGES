@@ -1,3 +1,6 @@
+Version 0.1.18:
+ - Fix drupal files tasks
+
 Version 0.1.17:
  - Fix shared_files_link task shared files path
 
