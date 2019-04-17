@@ -7,19 +7,23 @@ tasks:
       type: string
     tasks:
       init:
-        script: |
-          cat <<EOF
-          git init .
-          git remote rm origin || true
-          git remote add -t {{.git.branch}} -f origin  {{.git.repo}}
-          EOF
+        steps:
+        - task: exec
+          arguments:
+            title: "Git :: init"
+            cmd: |
+              git init .
+              git remote rm origin || true
+              git remote add -t {{.git.branch}} -f origin  {{.git.repo}}
       pull:
-        script: |
-          cat <<EOF
-          git checkout {{.git.branch}}
-          git reset --hard origin/{{.git.branch}}
-          git pull origin {{.git.branch}}
-          EOF
+        steps:
+        - task: exec
+          arguments:
+            title: "Git :: pull"
+            cmd: |
+              git checkout {{.git.branch}}
+              git reset --hard origin/{{.git.branch}}
+              git pull origin {{.git.branch}}
 
   general:
     tasks:
@@ -44,10 +48,15 @@ tasks:
   composer:
     tasks:
       install:
-        script: |
-          cat <<EOF
-          composer install --prefer-dist --optimize-autoloader
-          EOF
+        parameters:
+        - name: flags
+          type: string
+          default: "--prefer-dist --optimize-autoloader"
+        steps:
+        - task: exec
+          arguments:
+            title: "Composer :: Install"
+            cmd: composer install {{.flags}}
 
   goofys:
     tasks:
@@ -216,87 +225,56 @@ tasks:
 
   stages:
     tasks:
-      dev:
-        # Register parameters (in fact other tasks with the same name) so they can by used as tasks arguments in steps.
+      init:
         parameters:
         - name: general.setup.keys
+        # Actual init would be executed as part of above "parameters" processing.
+        script: echo "Init..."
         tasks:
-          init:
-            # Actual init would be executed as part of above "parameters" processing.
-            script: echo "Init..."
-            tasks:
-              git:
-                parameters:
-                - name: git.init
-                steps:
-                - task: exec
-                  arguments:
-                    title: "Git :: Init"
-                    cmd: '{{.git.init}}'
+          git:
+            steps:
+            - task: git.init
 
-          deploy:
+      deploy:
+        tasks:
+          before:
             tasks:
-              before:
+              drupal:
                 tasks:
-                  example:
+                  site:
                     parameters:
-                    - name: ssh.server.host
+                    - name: site_dir
+                      type: string
+                      default: default
                     steps:
-                    # Example of executing task with dynamic argument from parameter.
-                    - task: exec
+                    - task: drupal.files.fix_permissions
                       arguments:
-                        title: "Status"
-                        cmd: |
-                          echo "SSH server host: {{.ssh.server.host}}"
-                  drupal:
-                    tasks:
-                      site:
-                        parameters:
-                        - name: site_dir
-                          type: string
-                          default: default
-                        steps:
-                        - task: drupal.files.fix_permissions
-                          arguments:
-                            site_dir: '{{.site_dir}}'
-              pull:
-                parameters:
-                - name: git.pull
+                        site_dir: '{{.site_dir}}'
+          deliver:
+            steps:
+            - task: git.pull
+          build:
+            tasks:
+              drupal:
                 steps:
-                - task: exec
-                  arguments:
-                    title: "Git :: pull"
-                    cmd: '{{.git.pull}}'
-              build:
+                - task: composer.install
+          after:
+            tasks:
+              drupal:
                 tasks:
-                  drupal:
-                    tasks:
-                      composer:
-                        tasks:
-                          install:
-                            steps:
-                            - task: exec
-                              arguments:
-                                title: "Composer :: install"
-                                cmd: composer install --prefer-dist --optimize-autoloader
-
-              after:
-                tasks:
-                  drupal:
-                    tasks:
-                      common:
-                        steps:
-                        - task: drupal.files.env_file_link
-                      site:
-                        parameters:
-                        - name: site_dir
-                          type: string
-                          default: default
-                        steps:
-                        - task: drupal.files.shared_files_link
-                          arguments:
-                            site_dir: '{{.site_dir}}'
-                        - task: drupal.files.fix_permissions
-                          arguments:
-                            site_dir: '{{.site_dir}}'
+                  common:
+                    steps:
+                    - task: drupal.files.env_file_link
+                  site:
+                    parameters:
+                    - name: site_dir
+                      type: string
+                      default: default
+                    steps:
+                    - task: drupal.files.shared_files_link
+                      arguments:
+                        site_dir: '{{.site_dir}}'
+                    - task: drupal.files.fix_permissions
+                      arguments:
+                        site_dir: '{{.site_dir}}'
 
