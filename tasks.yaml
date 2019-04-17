@@ -223,6 +223,68 @@ tasks:
         echo "exec mode is not defined properly"
       fi
 
+  drush:
+    parameters:
+    - name: site_dir
+      type: string
+      default: default
+    - name: flags
+      type: string
+      default: ""
+    tasks:
+      exec:
+        parameters:
+        - name: title
+          type: string
+          default: "Drush command"
+        - name: cmd
+          type: string
+        steps:
+        - task: exec
+          arguments:
+            title: "{{.title}}"
+            cmd: drush -l {{ .site_dir }} {{.cmd}} -y {{.flags}}
+      status:
+        steps:
+        - task: drush.exec
+          arguments:
+            title: "Drush :: status"
+            cmd: status
+            site_dir: "{{.site_dir}}"
+            flags: "{{.flags}}"
+      config_import:
+        steps:
+        - task: drush.exec
+          arguments:
+            title: "Drush :: config:import"
+            cmd: config:import
+            site_dir: "{{.site_dir}}"
+            flags: "{{.flags}}"
+      updatedb:
+        steps:
+        - task: drush.exec
+          arguments:
+            title: "Drush :: updatedb"
+            cmd: updatedb
+            site_dir: "{{.site_dir}}"
+            flags: "{{.flags}}"
+      entity_updates:
+        steps:
+        - task: drush.exec
+          arguments:
+            title: "Drush :: entity:updates"
+            cmd: entity:updates
+            site_dir: "{{.site_dir}}"
+            flags: "{{.flags}}"
+      cache_rebuild:
+        steps:
+        - task: drush.exec
+          arguments:
+            title: "Drush :: cache:rebuild"
+            cmd: cache:rebuild
+            site_dir: "{{.site_dir}}"
+            flags: "{{.flags}}"
+
   stages:
     tasks:
       init:
@@ -230,51 +292,48 @@ tasks:
         - name: general.setup.keys
         # Actual init would be executed as part of above "parameters" processing.
         script: echo "Init..."
-        tasks:
-          git:
-            steps:
-            - task: git.init
-
       deploy:
         tasks:
-          before:
+          direct:
             tasks:
-              drupal:
+              before:
                 tasks:
-                  site:
-                    parameters:
-                    - name: site_dir
-                      type: string
-                      default: default
-                    steps:
-                    - task: drupal.files.fix_permissions
-                      arguments:
-                        site_dir: '{{.site_dir}}'
-          deliver:
-            steps:
-            - task: git.pull
-          build:
-            tasks:
-              drupal:
+                  drupal:
+                    tasks:
+                      site:
+                        parameters:
+                        - name: site_dir
+                          type: string
+                          default: default
+                        steps:
+                        - task: drupal.files.fix_permissions
+                          arguments:
+                            site_dir: '{{.site_dir}}'
+              deliver:
                 steps:
-                - task: composer.install
-          after:
-            tasks:
-              drupal:
+                - task: git.pull
+              build:
                 tasks:
-                  common:
+                  drupal:
                     steps:
-                    - task: drupal.files.env_file_link
-                  site:
-                    parameters:
-                    - name: site_dir
-                      type: string
-                      default: default
-                    steps:
-                    - task: drupal.files.shared_files_link
-                      arguments:
-                        site_dir: '{{.site_dir}}'
-                    - task: drupal.files.fix_permissions
-                      arguments:
-                        site_dir: '{{.site_dir}}'
+                    - task: composer.install
+              after:
+                tasks:
+                  drupal:
+                    tasks:
+                      common:
+                        steps:
+                        - task: drupal.files.env_file_link
+                      site:
+                        parameters:
+                        - name: site_dir
+                          type: string
+                          default: default
+                        steps:
+                        - task: drupal.files.shared_files_link
+                          arguments:
+                            site_dir: '{{.site_dir}}'
+                        - task: drupal.files.fix_permissions
+                          arguments:
+                            site_dir: '{{.site_dir}}'
 
