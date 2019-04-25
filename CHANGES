@@ -1,3 +1,6 @@
+Version 0.1.21:
+ - Add silent=true for the keys enabled task
+
 Version 0.1.20:
  - Refactor tasks
 
