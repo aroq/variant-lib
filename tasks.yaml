@@ -41,6 +41,7 @@ tasks:
                     echo Enabled: {{ .enabled }}
                     exit 1
                   fi
+                silent: true
               then:
               - task: goofys.mount
               - task: ssh.copy_id_rsa
