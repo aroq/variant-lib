@@ -1,3 +1,6 @@
+Version 0.1.22:
+ - Improve exec command & add new tasks
+
 Version 0.1.21:
  - Add silent=true for the keys enabled task
 
