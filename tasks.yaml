@@ -6,6 +6,23 @@ tasks:
     - name: git.branch
       type: string
     tasks:
+      config:
+        tasks:
+          identity:
+            parameters:
+            - name: name
+              type: string
+              default: "Zebra Project"
+            - name: email
+              type: string
+              default: "zebraproject@adyax.com"
+            steps:
+            - task: exec
+              arguments:
+                title: "Git :: config"
+                cmd: |
+                  git config --list | grep user\.name  || git config --global user.name "{{.name}}"
+                  git config --list | grep user\.email || git config --global user.email "{{.email}}"
       init:
         steps:
         - task: exec
@@ -58,6 +75,45 @@ tasks:
           arguments:
             title: "Composer :: Install"
             cmd: composer install {{.flags}}
+
+  docman:
+    parameters:
+    - name: repo
+      type: string
+    - name: branch
+      type: string
+    - name: state
+      type: string
+    - name: config
+      type: string
+    - name: dir
+      type: string
+      default: docman
+    tasks:
+      init:
+        steps:
+        - task: exec
+          arguments:
+            title: "Docman :: Init"
+            cmd: |
+              rm -fR {{.dir}}
+              docman init docman {{.repo}} --branch={{.branch}}
+      info:
+        steps:
+        - task: exec
+          arguments:
+            title: "Docman :: Info"
+            cmd: |
+              cd {{.dir}}
+              docman info full config.json
+      build:
+        steps:
+        - task: exec
+          arguments:
+            title: "Docman :: Build {{.state}}"
+            cmd: |
+              cd {{.dir}}
+              docman build git_target {{.state}} --config='{{.config}}'
 
   goofys:
     tasks:
@@ -194,34 +250,60 @@ tasks:
       default: local
     - name: sudo_user
       type: string
+    - name: verbose
+      type: string
+      default: "true"
     script: |
+      cmd_info () {
+        CMD_TITLE=${1}
+        CMD_DIR=${2:-"$(pwd)"}
+        CMD_SSH_HOST=${3:-}
+        CMD_SUDO_USER=${4:-}
+        CMD={{get "cmd" | quote}}
+        if [ -z "${CMD_SSH_HOST}" ]; then
+          CMD_SSH_HOST_MESSAGE=''
+        else
+          CMD_SSH_HOST_MESSAGE=" through SSH on the remote host ${CMD_SSH_HOST}"
+        fi
+        if [ -z "${CMD_SUDO_USER}" ]; then
+          CMD_SUDO_USER_MESSAGE=''
+        else
+          CMD_SUDO_USER_MESSAGE=" as a sudo user \"${CMD_SUDO_USER}\""
+        fi
+
+        if [ "{{.verbose}}" = "true" ]; then
+          printf "%s\e[34m---> ${CMD_TITLE} :: Executing command in the directory ${CMD_DIR}${CMD_SSH_HOST_MESSAGE}${CMD_SUDO_USER_MESSAGE} (mode={{.mode}}): \e[0m\n"
+          echo -e "\033[0;32m${CMD}\033[0m"
+        fi
+      }
+
       if [ "{{ .mode }}" = "ssh" ]; then
-        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
+        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}" "{{.ssh.server.user}}@{{.ssh.server.host}}"
         ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}"
       elif [ "{{ .mode }}" = "ssh_sudo" ]; then
-        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\" through SSH on remote host as sudo user \"{{.sudo_user}}\": {{.ssh.server.user}}@{{.ssh.server.host}}"
+        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}" "{{.ssh.server.user}}@{{.ssh.server.host}}" "{{.sudo_user}}"
         ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "sudo -u {{.sudo_user}} bash -c 'set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}'"
       elif [ "{{ .mode }}" = "local_current_dir" ]; then
-        echo "---> {{.title}} :: Executing command: \"{{.cmd}}\" "
+        cmd_info "{{.title}}"
         set -e;
         {{.cmd}}
       elif [ "{{ .mode }}" = "local" ]; then
-        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\""
+        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}};"
         set -e;
         cd {{.exec_dir}}/{{.subdir}};
         {{.cmd}}
       elif [ "{{ .mode }}" = "gitlab_docker" ]; then
-        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\""
+        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}};"
         set -e;
         cd {{.exec_dir}}/{{.subdir}};
         {{.cmd}}
       elif [ "{{ .mode }}" = "gitlab_shell" ]; then
-        echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\""
+        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}};"
         set -e;
         cd {{.exec_dir}}/{{.subdir}};
         {{.cmd}}
       else
-        echo "exec mode is not defined properly"
+        printf "\e[31mexec mode is not defined properly\e[0m\n"
       fi
 
   drush:
@@ -337,4 +419,3 @@ tasks:
                         - task: drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
-
