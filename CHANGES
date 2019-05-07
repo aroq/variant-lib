@@ -1,3 +1,6 @@
+Version 0.1.23:
+ - Refactor exec command
+
 Version 0.1.22:
  - Improve exec command & add new tasks
 
