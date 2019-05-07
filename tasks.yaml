@@ -253,58 +253,60 @@ tasks:
     - name: verbose
       type: string
       default: "true"
-    script: |
-      cmd_info () {
-        CMD_TITLE=${1}
-        CMD_DIR=${2:-"$(pwd)"}
-        CMD_SSH_HOST=${3:-}
-        CMD_SUDO_USER=${4:-}
-        CMD={{get "cmd" | quote}}
-        if [ -z "${CMD_SSH_HOST}" ]; then
-          CMD_SSH_HOST_MESSAGE=''
-        else
-          CMD_SSH_HOST_MESSAGE=" through SSH on the remote host ${CMD_SSH_HOST}"
-        fi
-        if [ -z "${CMD_SUDO_USER}" ]; then
-          CMD_SUDO_USER_MESSAGE=''
-        else
-          CMD_SUDO_USER_MESSAGE=" as a sudo user \"${CMD_SUDO_USER}\""
-        fi
+    steps:
+    - script: |
+        cmd_info () {
+          CMD={{ .cmd | trimSuffix "\n" | quote }}
+          CMD_TITLE=${1}
+          CMD_DIR=${2:-"$(pwd)"}
+          CMD_SSH_HOST=${3:-}
+          CMD_SUDO_USER=${4:-}
+          if [ -z "${CMD_SSH_HOST}" ]; then
+            CMD_SSH_HOST_MESSAGE=''
+          else
+            CMD_SSH_HOST_MESSAGE=" through SSH on the remote host ${CMD_SSH_HOST}"
+          fi
+          if [ -z "${CMD_SUDO_USER}" ]; then
+            CMD_SUDO_USER_MESSAGE=''
+          else
+            CMD_SUDO_USER_MESSAGE=" as a sudo user \"${CMD_SUDO_USER}\""
+          fi
 
-        if [ "{{.verbose}}" = "true" ]; then
-          printf "%s\e[34m---> ${CMD_TITLE} :: Executing command in the directory ${CMD_DIR}${CMD_SSH_HOST_MESSAGE}${CMD_SUDO_USER_MESSAGE} (mode={{.mode}}): \e[0m\n"
+          if [ "{{.verbose}}" = "true" ]; then
+            printf "%s\e[34m---> ${CMD_TITLE} :: Executing command in the directory ${CMD_DIR}${CMD_SSH_HOST_MESSAGE}${CMD_SUDO_USER_MESSAGE} (mode={{.mode}}): \e[0m\n"
+          fi
+
           echo -e "\033[0;32m${CMD}\033[0m"
-        fi
-      }
+        }
 
-      if [ "{{ .mode }}" = "ssh" ]; then
-        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}" "{{.ssh.server.user}}@{{.ssh.server.host}}"
-        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}"
-      elif [ "{{ .mode }}" = "ssh_sudo" ]; then
-        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}" "{{.ssh.server.user}}@{{.ssh.server.host}}" "{{.sudo_user}}"
-        ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "sudo -u {{.sudo_user}} bash -c 'set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}'"
-      elif [ "{{ .mode }}" = "local_current_dir" ]; then
-        cmd_info "{{.title}}"
-        set -e;
-        {{.cmd}}
-      elif [ "{{ .mode }}" = "local" ]; then
-        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}};"
-        set -e;
-        cd {{.exec_dir}}/{{.subdir}};
-        {{.cmd}}
-      elif [ "{{ .mode }}" = "gitlab_docker" ]; then
-        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}};"
-        set -e;
-        cd {{.exec_dir}}/{{.subdir}};
-        {{.cmd}}
-      elif [ "{{ .mode }}" = "gitlab_shell" ]; then
-        cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}};"
-        set -e;
-        cd {{.exec_dir}}/{{.subdir}};
-        {{.cmd}}
-      else
-        printf "\e[31mexec mode is not defined properly\e[0m\n"
-      fi
+        if [ "{{ .mode }}" = "ssh" ]; then
+          cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}" "{{.ssh.server.user}}@{{.ssh.server.host}}"
+          ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd | escapeDoubleQuotes | trimSuffix "\n"}}"
+        elif [ "{{ .mode }}" = "ssh_sudo" ]; then
+          cmd_info "${{.title}}" "{{.exec_dir}}/{{.subdir}}" "{{.ssh.server.user}}@{{.ssh.server.host}}" "{{.sudo_user}}"
+          ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} 'sudo -u {{.sudo_user}} bash -c "set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd | escapeDoubleQuotes | trimSuffix "\n"}}"'
+        elif [ "{{ .mode }}" = "local_current_dir" ]; then
+          cmd_info "{{.title}}"
+          set -e;
+          {{.cmd}}
+        elif [ "{{ .mode }}" = "local" ]; then
+          cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}"
+          set -e;
+          cd {{.exec_dir}}/{{.subdir}};
+          {{.cmd}}
+        elif [ "{{ .mode }}" = "gitlab_docker" ]; then
+          cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}"
+          set -e;
+          cd {{.exec_dir}}/{{.subdir}};
+          {{.cmd}}
+        elif [ "{{ .mode }}" = "gitlab_shell" ]; then
+          cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}"
+          set -e;
+          cd {{.exec_dir}}/{{.subdir}};
+          {{.cmd}}
+        else
+          printf "\e[31mexec mode is not defined properly\e[0m\n"
+        fi
 
   drush:
     parameters:
