@@ -155,11 +155,11 @@ tasks:
               arguments:
                 title: "Drupal :: Files :: Fix permissions"
                 cmd: |
-                  if [ -d docroot/sites/{{.site_dir}} ]; then chmod 755 docroot/sites/{{.site_dir}}; fi && \
-                  if [ -f docroot/sites/{{.site_dir}}/services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/services.yml; fi && \
-                  if [ -f docroot/sites/{{.site_dir}}/default.services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/default.services.yml; fi && \
-                  if [ -f docroot/sites/{{.site_dir}}/settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/settings.php; fi && \
-                  if [ -f docroot/sites/{{.site_dir}}/default.settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/default.settings.php; fi && \
+                  if [ -d docroot/sites/{{.site_dir}} ]; then chmod 755 docroot/sites/{{.site_dir}}; fi
+                  if [ -f docroot/sites/{{.site_dir}}/services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/services.yml; fi
+                  if [ -f docroot/sites/{{.site_dir}}/default.services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/default.services.yml; fi
+                  if [ -f docroot/sites/{{.site_dir}}/settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/settings.php; fi
+                  if [ -f docroot/sites/{{.site_dir}}/default.settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/default.settings.php; fi
                   if [ -d docroot/sites/{{.site_dir}}/files ]; then chmod 755 docroot/sites/{{.site_dir}}/files; fi
           shared_files_link:
             steps:
@@ -256,7 +256,7 @@ tasks:
     steps:
     - script: |
         cmd_info () {
-          CMD={{ .cmd | trimSuffix "\n" | quote }}
+          CMD={{.cmd | trimSuffix "\n" | quote | replace "\\n" "\n" }}
           CMD_TITLE=${1}
           CMD_DIR=${2:-"$(pwd)"}
           CMD_SSH_HOST=${3:-}
