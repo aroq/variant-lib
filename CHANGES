@@ -1,3 +1,6 @@
+Version 0.1.26:
+ - Add docker & yarn tasks
+
 Version 0.1.25:
  - Add ansible tasks & refactor tasks
 
