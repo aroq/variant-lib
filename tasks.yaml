@@ -471,6 +471,73 @@ tasks:
             site_dir: "{{.site_dir}}"
             flags: "{{.flags}}"
 
+  yarn:
+    parameters:
+    - name: dir
+      type: string
+    tasks:
+      build:
+        parameters:
+        - name: target
+          type: string
+          default: build
+        steps:
+        - task: exec
+          arguments:
+            title: "Yarn :: {{.target}}"
+            cmd: |
+              cd {{.dir}}
+              yarn
+              yarn {{.target}}
+
+  docker:
+    tasks:
+      run:
+        parameters:
+        - name: executable
+          type: string
+          default: docker
+        - name: image
+          type: string
+        - name: cmd
+          type: string
+        - name: flags
+          type: string
+          default: --rm
+        - name: shell_prefix
+          type: string
+          default: /bin/bash -c
+        - name: volumes
+          type: string
+          default: -v "${PWD}:${PWD}"
+        - name: working_dir
+          type: string
+          default: -w ${PWD}
+        steps:
+        - task: exec
+          arguments:
+            mode: local_current_dir
+            cmd: |
+              {{.executable}} run {{.flags}} {{.volumes}} {{.working_dir}} {{.image}} {{.shell_prefix}} '{{.cmd}}'
+      variant:
+        parameters:
+        - name: flags
+          type: string
+          default: 'VARIANT_LOG_COLOR_WARN="yellow" VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
+        - name: executable
+          type: string
+          default: variant
+        - name: cmd
+          type: string
+        - name: image
+          type: string
+          default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
+        steps:
+        - task: docker.run
+          arguments:
+            image: "{{.image}}"
+            cmd: "{{.flags}} {{.executable}} {{.cmd}}"
+
   stages:
     tasks:
       init:
