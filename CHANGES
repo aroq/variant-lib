@@ -1,3 +1,6 @@
+Version 0.1.27:
+ - Remove state param from docker build
+
 Version 0.1.26:
  - Add docker & yarn tasks
 
