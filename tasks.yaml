@@ -116,7 +116,7 @@ tasks:
             title: "Docman :: Build {{.state}}"
             cmd: |
               cd {{.dir}}
-              {{.executable}} build git_target {{.state}}
+              {{.executable}} build git_target
         tasks:
           stable:
             steps:
