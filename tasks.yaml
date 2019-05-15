@@ -78,6 +78,9 @@ tasks:
 
   docman:
     parameters:
+    - name: executable
+      type: string
+      default: docman
     - name: repo
       type: string
     - name: branch
@@ -97,7 +100,7 @@ tasks:
             title: "Docman :: Init"
             cmd: |
               rm -fR {{.dir}}
-              docman init docman {{.repo}} --branch={{.branch}}
+              {{.executable}} init docman {{.repo}} --branch={{.branch}}
       info:
         steps:
         - task: exec
@@ -105,7 +108,7 @@ tasks:
             title: "Docman :: Info"
             cmd: |
               cd {{.dir}}
-              docman info full config.json
+              {{.executable}} info full config.json
       build:
         steps:
         - task: exec
@@ -113,7 +116,101 @@ tasks:
             title: "Docman :: Build {{.state}}"
             cmd: |
               cd {{.dir}}
-              docman build git_target {{.state}} --config='{{.config}}'
+              {{.executable}} build git_target {{.state}}
+        tasks:
+          stable:
+            steps:
+            - task: docman.build
+              arguments:
+                state: stable
+
+  ansible:
+    parameters:
+    - name: ansible_dir
+      type: string
+      default: ansible
+    - name: ansible_config_file
+      type: string
+      default: ansible.cfg
+    tasks:
+      playbook:
+        parameters:
+        - name: title
+          type: string
+          default: "Ansible playbook"
+        - name: executable
+          type: string
+          default: ansible-playbook
+        - name: playbook
+          type: string
+        - name: inventory_file
+          type: string
+        - name: vars
+          type: string
+          default: "{}"
+        steps:
+        - task: exec
+          arguments:
+            title: "{{.title}}"
+            cmd: |
+              cd {{.ansible_dir}}
+              ANSIBLE_CONFIG='{{.ansible_config_file}}' \
+              {{.executable}} {{.playbook}} -i {{.inventory_file}} \
+              -e '{{.vars}}'
+  ansistrano:
+    parameters:
+    - name: user
+      type: string
+    - name: host
+      type: string
+    - name: ansistrano_deploy_to
+      type: string
+    - name: ansistrano_deploy_from
+      type: string
+      default: "../master.tar.gz"
+    - name: deploy_environment
+      type: string
+    - name: ansistrano_deploy_via
+      type: string
+      default: copy_unarchive
+    tasks:
+      deploy:
+        steps:
+        - task: ansible.playbook
+          arguments:
+            title: "Ansistrano deploy {{.deploy_environment}}"
+            playbook: "deployWithAnsistrano.yml"
+            inventory_file: "{{.deploy_environment}}.inventory.yaml"
+            vars: '{"user":"{{.user}}","host":"{{.host}}","ansistrano_deploy_to":"{{.ansistrano_deploy_to}}","ansistrano_deploy_from":"{{.ansistrano_deploy_from}}","deploy_environment":"{{.deploy_environment}}","ansistrano_deploy_via":"{{.ansistrano_deploy_via}}"}'
+
+  artifact:
+    parameters:
+    - name: version
+      type: string
+    - name: artifacts_dir
+      type: string
+      default: artifacts
+    - name: artifact_dir
+      type: string
+      default: master
+    tasks:
+      git:
+        parameters:
+        - name: clone_options
+          type: string
+          default: --single-branch --depth 1
+        - name: repo
+          type: string
+        steps:
+        - task: exec
+          arguments:
+            title: "Artifact :: Git {{.version}}"
+            cmd: |
+              mkdir -p {{.artifacts_dir}}
+              rm -rf {{.artifacts_dir}}/{{.artifact_dir}}
+              git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}}
+              tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
+              rm -rf {{.artifacts_dir}}
 
   goofys:
     tasks:
@@ -227,12 +324,16 @@ tasks:
     parameters:
     - name: ssh.server.project_root_dir
       type: string
+      default: ""
     - name: ssh.server.project_subdirectory
       type: string
+      default: ""
     - name: ssh.server.user
       type: string
+      default: ""
     - name: ssh.server.host
       type: string
+      default: ""
     - name: exec_dir
       type: string
     - name: subdir
@@ -421,3 +522,4 @@ tasks:
                         - task: drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
