@@ -478,17 +478,26 @@ tasks:
     tasks:
       build:
         parameters:
+        - name: install_options
+          type: string
+          default: ""
         - name: target
           type: string
           default: build
         steps:
         - task: exec
           arguments:
-            title: "Yarn :: {{.target}}"
+            title: "Yarn :: build :: {{.target}}"
             cmd: |
               cd {{.dir}}
-              yarn
+              yarn{{.install_options}}
               yarn {{.target}}
+        tasks:
+          dev:
+            steps:
+            - task: yarn.build
+              arguments:
+                install_options: " --frozen-lockfile --ignore-optional --non-interactive"
 
   docker:
     tasks:
@@ -589,4 +598,5 @@ tasks:
                         - task: drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
 
