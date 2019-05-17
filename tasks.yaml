@@ -541,11 +541,15 @@ tasks:
         - name: image
           type: string
           default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
+        - name: volumes
+          type: string
+          default: -v "${PWD}:${PWD}"
         steps:
         - task: docker.run
           arguments:
             image: "{{.image}}"
             cmd: "{{.flags}} {{.executable}} {{.cmd}}"
+            volumes: "{{.volumes}}"
 
   stages:
     tasks:
