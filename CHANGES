@@ -1,3 +1,6 @@
+Version 0.1.29:
+ - Update docker volumes handling
+
 Version 0.1.28:
  - Update yarn command
 
