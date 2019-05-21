@@ -278,16 +278,22 @@ tasks:
                   {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/environments/env.settings.php
 
   ssh:
-    parameters:
-    - name: ssh.server.project_root_dir
-      type: string
-    - name: ssh.server.project_subdirectory
-      type: string
-    - name: ssh.server.user
-      type: string
-    - name: ssh.server.host
-      type: string
     tasks:
+      server:
+        parameters:
+        - name: user
+          type: string
+          default: ""
+        - name: host
+          type: string
+          default: ""
+        - name: project_root_dir
+          type: string
+          default: ""
+        - name: project_subdirectory
+          type: string
+          default: ""
+        script: ssh -v {{.user}}@{{.host}}
       copy_id_rsa:
         parameters:
         - name: source_key_path
@@ -305,23 +311,6 @@ tasks:
         script: |
           echo "---> SSH :: Copy id_rsa key"
           cp -fR {{.source_key_path}}/{{.source_key_name}} {{.target_key_path}}/{{.target_key_name}}
-      # Deprecated, use "exec" instead of "exec"
-      exec:
-        parameters:
-        - name: exec_dir
-          type: string
-        - name: subdir
-          type: string
-          default: ""
-        - name: title
-          type: string
-          default: ""
-        - name: cmd
-          type: string
-          default: "pwd"
-        script: |
-          echo "---> {{.title}} :: Executing command: \"set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}\" through SSH on remote host: {{.ssh.server.user}}@{{.ssh.server.host}}"
-          ssh -T {{.ssh.server.user}}@{{.ssh.server.host}} "set -e; cd {{.exec_dir}}/{{.subdir}}; {{.cmd}}"
   exec:
     parameters:
     - name: ssh.server.project_root_dir
@@ -605,5 +594,3 @@ tasks:
                         - task: drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
-
-
