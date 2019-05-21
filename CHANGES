@@ -1,3 +1,7 @@
+Version 0.1.30:
+ - Add ssh server command
+ - Add default values for the params
+
 Version 0.1.29:
  - Update docker volumes handling
 
