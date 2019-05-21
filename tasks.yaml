@@ -241,6 +241,8 @@ tasks:
       files:
         parameters:
         - name: ssh.server.project_root_dir
+          type: string
+          default: ""
         - name: ssh.server.project_subdirectory
         - name: site_dir
           type: string
@@ -336,6 +338,7 @@ tasks:
       default: ""
     - name: exec_dir
       type: string
+      default: ""
     - name: subdir
       type: string
       default: ""
