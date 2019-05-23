@@ -1,3 +1,6 @@
+Version 0.1.31:
+ - Update docker task
+
 Version 0.1.30:
  - Add ssh server command
  - Add default values for the params
