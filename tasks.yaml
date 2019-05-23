@@ -545,6 +545,7 @@ tasks:
             image: "{{.image}}"
             cmd: "{{.flags}} {{.executable}} {{.cmd}}"
             volumes: "{{.volumes}}"
+            working_dir: "{{.working_dir}}"
 
   stages:
     tasks:
