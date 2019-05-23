@@ -536,6 +536,9 @@ tasks:
         - name: volumes
           type: string
           default: -v "${PWD}:${PWD}"
+        - name: working_dir
+          type: string
+          default: -w ${PWD}
         steps:
         - task: docker.run
           arguments:
