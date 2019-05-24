@@ -553,9 +553,6 @@ tasks:
             - name: flags
               type: string
               default: 'VARIANT_LOG_COLOR_WARN="yellow" VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
-            - name: executable
-              type: string
-              default: variant
             - name: cmd
               type: string
             - name: image
@@ -568,10 +565,11 @@ tasks:
               type: string
               default: "-w {{.exec.exec_dir}}"
             steps:
-            - task: docker.run
+            - task: docker.variant
               arguments:
                 image: "{{.image}}"
-                cmd: "{{.flags}} {{.executable}} {{.cmd}}"
+                cmd: "{{.cmd}}"
+                flags: "{{.flags}}"
                 volumes: "{{.volumes}}"
                 working_dir: "{{.working_dir}}"
 
