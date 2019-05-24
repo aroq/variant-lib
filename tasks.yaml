@@ -520,7 +520,7 @@ tasks:
             mode: local_current_dir
             cmd: |
               {{.executable}} run {{.flags}} {{.volumes}} {{.working_dir}} {{.image}} {{.shell_prefix}} '{{.cmd}}'
-      variant:
+      variant_exec:
         parameters:
         - name: flags
           type: string
@@ -542,36 +542,26 @@ tasks:
         steps:
         - task: docker.run
           arguments:
-            image: "{{.image}}"
             cmd: "{{.flags}} {{.executable}} {{.cmd}}"
+            image: "{{.image}}"
             volumes: "{{.volumes}}"
             working_dir: "{{.working_dir}}"
-
-        tasks:
-          project:
-            parameters:
-            - name: flags
-              type: string
-              default: 'VARIANT_LOG_COLOR_WARN="yellow" VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
-            - name: cmd
-              type: string
-            - name: image
-              type: string
-              default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
-            - name: volumes
-              type: string
-              default: "-v {{.exec.exec_dir}}:{{.exec.exec_dir}} -v /home/{{.ssh.server.user}}/.ssh/id_rsa:/root/.ssh/id_rsa"
-            - name: working_dir
-              type: string
-              default: "-w {{.exec.exec_dir}}"
-            steps:
-            - task: docker.variant
-              arguments:
-                image: "{{.image}}"
-                cmd: "{{.cmd}}"
-                flags: "{{.flags}}"
-                volumes: "{{.volumes}}"
-                working_dir: "{{.working_dir}}"
+      variant:
+        parameters:
+        - name: exec.exec_dir
+        - name: ssh.server.user
+        - name: cmd
+          type: string
+        - name: image
+          type: string
+          default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
+        steps:
+        - task: docker.variant_exec
+          arguments:
+            cmd: "{{.cmd}}"
+            image: "{{.image}}"
+            volumes: "-v {{.exec.exec_dir}}:{{.exec.exec_dir}} -v /home/{{.ssh.server.user}}/.ssh/id_rsa:/root/.ssh/id_rsa"
+            working_dir: "-w {{.exec.exec_dir}}"
 
   stages:
     tasks:
