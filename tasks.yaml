@@ -560,8 +560,8 @@ tasks:
           arguments:
             cmd: "{{.cmd}}"
             image: "{{.image}}"
-            volumes: "-v {{.exec.exec_dir}}:{{.exec.exec_dir}} -v /home/{{.ssh.server.user}}/.ssh/id_rsa:/root/.ssh/id_rsa"
-            working_dir: "-w {{.exec.exec_dir}}"
+            volumes: -v "${PWD}:${PWD}"
+            working_dir: -w ${PWD}
 
   stages:
     tasks:
