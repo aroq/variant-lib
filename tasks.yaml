@@ -547,6 +547,34 @@ tasks:
             volumes: "{{.volumes}}"
             working_dir: "{{.working_dir}}"
 
+        tasks:
+          project:
+            parameters:
+            - name: flags
+              type: string
+              default: 'VARIANT_LOG_COLOR_WARN="yellow" VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
+            - name: executable
+              type: string
+              default: variant
+            - name: cmd
+              type: string
+            - name: image
+              type: string
+              default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
+            - name: volumes
+              type: string
+              default: "-v {{.exec.exec_dir}}:{{.exec.exec_dir}} -v /home/{{.ssh.server.user}}/.ssh/id_rsa:/root/.ssh/id_rsa"
+            - name: working_dir
+              type: string
+              default: "-w {{.exec.exec_dir}}"
+            steps:
+            - task: docker.run
+              arguments:
+                image: "{{.image}}"
+                cmd: "{{.flags}} {{.executable}} {{.cmd}}"
+                volumes: "{{.volumes}}"
+                working_dir: "{{.working_dir}}"
+
   stages:
     tasks:
       init:
