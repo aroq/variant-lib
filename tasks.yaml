@@ -207,16 +207,16 @@ tasks:
                 cmd: |
                   git init .
                   git remote rm origin || true
-                  git remote add -t {{.git.branch}} -f origin  {{.git.repo}}
+                  git remote add -t {{.branch}} -f origin  {{.repo}}
           pull:
             steps:
             - task: exec
               arguments:
                 title: "Git :: pull"
                 cmd: |
-                  git checkout {{.git.branch}}
-                  git reset --hard origin/{{.git.branch}}
-                  git pull origin {{.git.branch}}
+                  git checkout {{.branch}}
+                  git reset --hard origin/{{.branch}}
+                  git pull origin {{.branch}}
 
       composer:
         tasks:
