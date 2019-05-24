@@ -1,282 +1,4 @@
 tasks:
-  git:
-    parameters:
-    - name: git.repo
-      type: string
-    - name: git.branch
-      type: string
-    tasks:
-      config:
-        tasks:
-          identity:
-            parameters:
-            - name: name
-              type: string
-              default: "Zebra Project"
-            - name: email
-              type: string
-              default: "zebraproject@adyax.com"
-            steps:
-            - task: exec
-              arguments:
-                title: "Git :: config"
-                cmd: |
-                  git config --list | grep user\.name  || git config --global user.name "{{.name}}"
-                  git config --list | grep user\.email || git config --global user.email "{{.email}}"
-      init:
-        steps:
-        - task: exec
-          arguments:
-            title: "Git :: init"
-            cmd: |
-              git init .
-              git remote rm origin || true
-              git remote add -t {{.git.branch}} -f origin  {{.git.repo}}
-      pull:
-        steps:
-        - task: exec
-          arguments:
-            title: "Git :: pull"
-            cmd: |
-              git checkout {{.git.branch}}
-              git reset --hard origin/{{.git.branch}}
-              git pull origin {{.git.branch}}
-
-  general:
-    tasks:
-      setup:
-        tasks:
-          keys:
-            parameters:
-            - name: enabled
-              type: string
-              default: "false"
-            steps:
-            - if:
-              - script: |
-                  if [ "{{ .enabled }}" != "true" ]; then
-                    echo Enabled: {{ .enabled }}
-                    exit 1
-                  fi
-                silent: true
-              then:
-              - task: goofys.mount
-              - task: ssh.copy_id_rsa
-
-  composer:
-    tasks:
-      install:
-        parameters:
-        - name: flags
-          type: string
-          default: "--prefer-dist --optimize-autoloader"
-        steps:
-        - task: exec
-          arguments:
-            title: "Composer :: Install"
-            cmd: composer install {{.flags}}
-
-  docman:
-    parameters:
-    - name: executable
-      type: string
-      default: docman
-    - name: repo
-      type: string
-    - name: branch
-      type: string
-    - name: state
-      type: string
-    - name: config
-      type: string
-    - name: dir
-      type: string
-      default: docman
-    tasks:
-      init:
-        steps:
-        - task: exec
-          arguments:
-            title: "Docman :: Init"
-            cmd: |
-              rm -fR {{.dir}}
-              {{.executable}} init docman {{.repo}} --branch={{.branch}}
-      info:
-        steps:
-        - task: exec
-          arguments:
-            title: "Docman :: Info"
-            cmd: |
-              cd {{.dir}}
-              {{.executable}} info full config.json
-      build:
-        steps:
-        - task: exec
-          arguments:
-            title: "Docman :: Build {{.state}}"
-            cmd: |
-              cd {{.dir}}
-              {{.executable}} build git_target
-        tasks:
-          stable:
-            steps:
-            - task: docman.build
-              arguments:
-                state: stable
-
-  ansible:
-    parameters:
-    - name: ansible_dir
-      type: string
-      default: ansible
-    - name: ansible_config_file
-      type: string
-      default: ansible.cfg
-    tasks:
-      playbook:
-        parameters:
-        - name: title
-          type: string
-          default: "Ansible playbook"
-        - name: executable
-          type: string
-          default: ansible-playbook
-        - name: playbook
-          type: string
-        - name: inventory_file
-          type: string
-        - name: vars
-          type: string
-          default: "{}"
-        steps:
-        - task: exec
-          arguments:
-            title: "{{.title}}"
-            cmd: |
-              cd {{.ansible_dir}}
-              ANSIBLE_CONFIG='{{.ansible_config_file}}' \
-              {{.executable}} {{.playbook}} -i {{.inventory_file}} \
-              -e '{{.vars}}'
-  ansistrano:
-    parameters:
-    - name: user
-      type: string
-    - name: host
-      type: string
-    - name: ansistrano_deploy_to
-      type: string
-    - name: ansistrano_deploy_from
-      type: string
-      default: "../master.tar.gz"
-    - name: deploy_environment
-      type: string
-    - name: ansistrano_deploy_via
-      type: string
-      default: copy_unarchive
-    tasks:
-      deploy:
-        steps:
-        - task: ansible.playbook
-          arguments:
-            title: "Ansistrano deploy {{.deploy_environment}}"
-            playbook: "deployWithAnsistrano.yml"
-            inventory_file: "{{.deploy_environment}}.inventory.yaml"
-            vars: '{"user":"{{.user}}","host":"{{.host}}","ansistrano_deploy_to":"{{.ansistrano_deploy_to}}","ansistrano_deploy_from":"{{.ansistrano_deploy_from}}","deploy_environment":"{{.deploy_environment}}","ansistrano_deploy_via":"{{.ansistrano_deploy_via}}"}'
-
-  artifact:
-    parameters:
-    - name: version
-      type: string
-    - name: artifacts_dir
-      type: string
-      default: artifacts
-    - name: artifact_dir
-      type: string
-      default: master
-    tasks:
-      git:
-        parameters:
-        - name: clone_options
-          type: string
-          default: --single-branch --depth 1
-        - name: repo
-          type: string
-        steps:
-        - task: exec
-          arguments:
-            title: "Artifact :: Git {{.version}}"
-            cmd: |
-              mkdir -p {{.artifacts_dir}}
-              rm -rf {{.artifacts_dir}}/{{.artifact_dir}}
-              git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}}
-              tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
-              rm -rf {{.artifacts_dir}}
-
-  goofys:
-    tasks:
-      mount:
-        inputs:
-        - name: mount_point
-          type: string
-          default: "/root/.secrets"
-        - name: bucket
-          type: string
-          default: ""
-        - name: mode
-          type: string
-          default: "0600"
-
-        script: |
-          echo "---> Goofys :: Mount bucket"
-          if [ -n {{.mount_point}} ]; then
-            if [ ! -d {{.mount_point}} ]; then
-              mkdir -p {{.mount_point}}
-              (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
-              sleep 5
-            fi
-          fi
-
-  drupal:
-    tasks:
-      files:
-        parameters:
-        - name: ssh.server.project_root_dir
-          type: string
-          default: ""
-        - name: ssh.server.project_subdirectory
-        - name: site_dir
-          type: string
-          default: default
-        tasks:
-          fix_permissions:
-            steps:
-            - task: exec
-              arguments:
-                title: "Drupal :: Files :: Fix permissions"
-                cmd: |
-                  if [ -d docroot/sites/{{.site_dir}} ]; then chmod 755 docroot/sites/{{.site_dir}}; fi
-                  if [ -f docroot/sites/{{.site_dir}}/services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/services.yml; fi
-                  if [ -f docroot/sites/{{.site_dir}}/default.services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/default.services.yml; fi
-                  if [ -f docroot/sites/{{.site_dir}}/settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/settings.php; fi
-                  if [ -f docroot/sites/{{.site_dir}}/default.settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/default.settings.php; fi
-                  if [ -d docroot/sites/{{.site_dir}}/files ]; then chmod 755 docroot/sites/{{.site_dir}}/files; fi
-          shared_files_link:
-            steps:
-            - task: exec
-              arguments:
-                title: "Drupal :: Files :: Shared files link"
-                cmd: |
-                  ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files \
-                  {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files
-          env_file_link:
-            steps:
-            - task: exec
-              arguments:
-                title: "Drupal :: Files :: Environment file link"
-                cmd: |
-                  ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/environments/env.settings.php \
-                  {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/environments/env.settings.php
-
   ssh:
     tasks:
       server:
@@ -294,23 +16,6 @@ tasks:
           type: string
           default: ""
         script: ssh -v {{.user}}@{{.host}}
-      copy_id_rsa:
-        parameters:
-        - name: source_key_path
-          type: string
-          default: "/root/.secrets/.ssh"
-        - name: target_key_path
-          type: string
-          default: "/root/.ssh"
-        - name: source_key_name
-          type: string
-          default: "id_rsa"
-        - name: target_key_name
-          type: string
-          default: "id_rsa"
-        script: |
-          echo "---> SSH :: Copy id_rsa key"
-          cp -fR {{.source_key_path}}/{{.source_key_name}} {{.target_key_path}}/{{.target_key_name}}
   exec:
     parameters:
     - name: ssh.server.project_root_dir
@@ -339,7 +44,6 @@ tasks:
       default: "pwd"
     - name: mode
       type: string
-      # Possible values: "ssh", "local".
       default: local
     - name: sudo_user
       type: string
@@ -401,216 +105,516 @@ tasks:
           printf "\e[31mexec mode is not defined properly\e[0m\n"
         fi
 
-  drush:
-    parameters:
-    - name: site_dir
-      type: string
-      default: default
-    - name: flags
-      type: string
-      default: ""
+  utils:
     tasks:
-      exec:
+      setup:
+        tasks:
+          keys:
+            parameters:
+            - name: enabled
+              type: string
+              default: "false"
+            steps:
+            - if:
+              - script: |
+                  if [ "{{ .enabled }}" != "true" ]; then
+                    echo Enabled: {{ .enabled }}
+                    exit 1
+                  fi
+                silent: true
+              then:
+              - task: tools.goofys.mount
+              - task: tools.ssh.copy_id_rsa
+      artifact:
         parameters:
-        - name: title
+        - name: version
           type: string
-          default: "Drush command"
-        - name: cmd
+        - name: artifacts_dir
           type: string
-        steps:
-        - task: exec
-          arguments:
-            title: "{{.title}}"
-            cmd: drush -l {{ .site_dir }} {{.cmd}} -y {{.flags}}
-      status:
-        steps:
-        - task: drush.exec
-          arguments:
-            title: "Drush :: status"
-            cmd: status
-            site_dir: "{{.site_dir}}"
-            flags: "{{.flags}}"
-      config_import:
-        steps:
-        - task: drush.exec
-          arguments:
-            title: "Drush :: config:import"
-            cmd: config:import
-            site_dir: "{{.site_dir}}"
-            flags: "{{.flags}}"
-      updatedb:
-        steps:
-        - task: drush.exec
-          arguments:
-            title: "Drush :: updatedb"
-            cmd: updatedb
-            site_dir: "{{.site_dir}}"
-            flags: "{{.flags}}"
-      entity_updates:
-        steps:
-        - task: drush.exec
-          arguments:
-            title: "Drush :: entity:updates"
-            cmd: entity:updates
-            site_dir: "{{.site_dir}}"
-            flags: "{{.flags}}"
-      cache_rebuild:
-        steps:
-        - task: drush.exec
-          arguments:
-            title: "Drush :: cache:rebuild"
-            cmd: cache:rebuild
-            site_dir: "{{.site_dir}}"
-            flags: "{{.flags}}"
+          default: artifacts
+        - name: artifact_dir
+          type: string
+          default: master
+        tasks:
+          git:
+            parameters:
+            - name: clone_options
+              type: string
+              default: --single-branch --depth 1
+            - name: repo
+              type: string
+            steps:
+            - task: exec
+              arguments:
+                title: "Artifact :: Git {{.version}}"
+                cmd: |
+                  mkdir -p {{.artifacts_dir}}
+                  rm -rf {{.artifacts_dir}}/{{.artifact_dir}}
+                  git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}}
+                  tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
+                  rm -rf {{.artifacts_dir}}
 
-  yarn:
-    parameters:
-    - name: dir
-      type: string
+  tools:
     tasks:
-      build:
+      ssh:
+        tasks:
+          copy_id_rsa:
+            parameters:
+            - name: source_key_path
+              type: string
+              default: "/root/.secrets/.ssh"
+            - name: target_key_path
+              type: string
+              default: "/root/.ssh"
+            - name: source_key_name
+              type: string
+              default: "id_rsa"
+            - name: target_key_name
+              type: string
+              default: "id_rsa"
+            script: |
+              echo "---> SSH :: Copy id_rsa key"
+              cp -fR {{.source_key_path}}/{{.source_key_name}} {{.target_key_path}}/{{.target_key_name}}
+      git:
         parameters:
-        - name: install_options
+        - name: repo
+          type: string
+        - name: branch
+          type: string
+        tasks:
+          config:
+            tasks:
+              identity:
+                parameters:
+                - name: name
+                  type: string
+                  default: "Zebra Project"
+                - name: email
+                  type: string
+                  default: "zebraproject@adyax.com"
+                steps:
+                - task: exec
+                  arguments:
+                    title: "Git :: config"
+                    cmd: |
+                      git config --list | grep user\.name  || git config --global user.name "{{.name}}"
+                      git config --list | grep user\.email || git config --global user.email "{{.email}}"
+          init:
+            steps:
+            - task: exec
+              arguments:
+                title: "Git :: init"
+                cmd: |
+                  git init .
+                  git remote rm origin || true
+                  git remote add -t {{.git.branch}} -f origin  {{.git.repo}}
+          pull:
+            steps:
+            - task: exec
+              arguments:
+                title: "Git :: pull"
+                cmd: |
+                  git checkout {{.git.branch}}
+                  git reset --hard origin/{{.git.branch}}
+                  git pull origin {{.git.branch}}
+
+      composer:
+        tasks:
+          install:
+            parameters:
+            - name: flags
+              type: string
+              default: "--prefer-dist --optimize-autoloader"
+            steps:
+            - task: exec
+              arguments:
+                title: "Composer :: Install"
+                cmd: composer install {{.flags}}
+
+      docman:
+        parameters:
+        - name: executable
+          type: string
+          default: docman
+        - name: repo
+          type: string
+        - name: branch
+          type: string
+        - name: state
+          type: string
+        - name: config
+          type: string
+        - name: dir
+          type: string
+          default: docman
+        tasks:
+          init:
+            steps:
+            - task: exec
+              arguments:
+                title: "Docman :: Init"
+                cmd: |
+                  rm -fR {{.dir}}
+                  {{.executable}} init docman {{.repo}} --branch={{.branch}}
+          info:
+            steps:
+            - task: exec
+              arguments:
+                title: "Docman :: Info"
+                cmd: |
+                  cd {{.dir}}
+                  {{.executable}} info full config.json
+          build:
+            steps:
+            - task: exec
+              arguments:
+                title: "Docman :: Build {{.state}}"
+                cmd: |
+                  cd {{.dir}}
+                  {{.executable}} build git_target
+            tasks:
+              stable:
+                steps:
+                - task: tools.docman.build
+                  arguments:
+                    state: stable
+
+      ansible:
+        parameters:
+        - name: ansible_dir
+          type: string
+          default: ansible
+        - name: ansible_config_file
+          type: string
+          default: ansible.cfg
+        tasks:
+          playbook:
+            parameters:
+            - name: title
+              type: string
+              default: "Ansible playbook"
+            - name: executable
+              type: string
+              default: ansible-playbook
+            - name: playbook
+              type: string
+            - name: inventory_file
+              type: string
+            - name: vars
+              type: string
+              default: "{}"
+            steps:
+            - task: exec
+              arguments:
+                title: "{{.title}}"
+                cmd: |
+                  cd {{.ansible_dir}}
+                  ANSIBLE_CONFIG='{{.ansible_config_file}}' \
+                  {{.executable}} {{.playbook}} -i {{.inventory_file}} \
+                  -e '{{.vars}}'
+      ansistrano:
+        parameters:
+        - name: user
+          type: string
+        - name: host
+          type: string
+        - name: ansistrano_deploy_to
+          type: string
+        - name: ansistrano_deploy_from
+          type: string
+          default: "../master.tar.gz"
+        - name: deploy_environment
+          type: string
+        - name: ansistrano_deploy_via
+          type: string
+          default: copy_unarchive
+        tasks:
+          deploy:
+            steps:
+            - task: tools.ansible.playbook
+              arguments:
+                title: "Ansistrano deploy {{.deploy_environment}}"
+                playbook: "deployWithAnsistrano.yml"
+                inventory_file: "{{.deploy_environment}}.inventory.yaml"
+                vars: '{"user":"{{.user}}","host":"{{.host}}","ansistrano_deploy_to":"{{.ansistrano_deploy_to}}","ansistrano_deploy_from":"{{.ansistrano_deploy_from}}","deploy_environment":"{{.deploy_environment}}","ansistrano_deploy_via":"{{.ansistrano_deploy_via}}"}'
+
+      goofys:
+        tasks:
+          mount:
+            inputs:
+            - name: mount_point
+              type: string
+              default: "/root/.secrets"
+            - name: bucket
+              type: string
+              default: ""
+            - name: mode
+              type: string
+              default: "0600"
+
+            script: |
+              echo "---> Goofys :: Mount bucket"
+              if [ -n {{.mount_point}} ]; then
+                if [ ! -d {{.mount_point}} ]; then
+                  mkdir -p {{.mount_point}}
+                  (nohup goofys -f --file-mode={{.mode}} --sse {{.bucket}} {{.mount_point}}) 2>&1 >>/var/log/goofys.log 2>&1 &
+                  sleep 5
+                fi
+              fi
+
+      drupal:
+        tasks:
+          files:
+            parameters:
+            - name: ssh.server.project_root_dir
+              type: string
+              default: ""
+            - name: ssh.server.project_subdirectory
+            - name: site_dir
+              type: string
+              default: default
+            tasks:
+              fix_permissions:
+                steps:
+                - task: exec
+                  arguments:
+                    title: "Drupal :: Files :: Fix permissions"
+                    cmd: |
+                      if [ -d docroot/sites/{{.site_dir}} ]; then chmod 755 docroot/sites/{{.site_dir}}; fi
+                      if [ -f docroot/sites/{{.site_dir}}/services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/services.yml; fi
+                      if [ -f docroot/sites/{{.site_dir}}/default.services.yml ]; then chmod 644 docroot/sites/{{.site_dir}}/default.services.yml; fi
+                      if [ -f docroot/sites/{{.site_dir}}/settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/settings.php; fi
+                      if [ -f docroot/sites/{{.site_dir}}/default.settings.php ]; then chmod 644 docroot/sites/{{.site_dir}}/default.settings.php; fi
+                      if [ -d docroot/sites/{{.site_dir}}/files ]; then chmod 755 docroot/sites/{{.site_dir}}/files; fi
+              shared_files_link:
+                steps:
+                - task: exec
+                  arguments:
+                    title: "Drupal :: Files :: Shared files link"
+                    cmd: |
+                      ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files \
+                      {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/docroot/sites/{{.site_dir}}/files
+              env_file_link:
+                steps:
+                - task: exec
+                  arguments:
+                    title: "Drupal :: Files :: Environment file link"
+                    cmd: |
+                      ln -sfn {{.ssh.server.project_root_dir}}/shared/{{.ssh.server.project_subdirectory}}/environments/env.settings.php \
+                      {{.ssh.server.project_root_dir}}/current/{{.ssh.server.project_subdirectory}}/environments/env.settings.php
+
+
+      drush:
+        parameters:
+        - name: site_dir
+          type: string
+          default: default
+        - name: flags
           type: string
           default: ""
-        - name: target
-          type: string
-          default: build
-        steps:
-        - task: exec
-          arguments:
-            title: "Yarn :: build :: {{.target}}"
-            cmd: |
-              cd {{.dir}}
-              yarn{{.install_options}}
-              yarn {{.target}}
         tasks:
-          dev:
+          exec:
+            parameters:
+            - name: title
+              type: string
+              default: "Drush command"
+            - name: cmd
+              type: string
             steps:
-            - task: yarn.build
+            - task: exec
               arguments:
-                install_options: " --frozen-lockfile --ignore-optional --non-interactive"
+                title: "{{.title}}"
+                cmd: drush -l {{ .site_dir }} {{.cmd}} -y {{.flags}}
+          status:
+            steps:
+            - task: tools.drush.exec
+              arguments:
+                title: "Drush :: status"
+                cmd: status
+                site_dir: "{{.site_dir}}"
+                flags: "{{.flags}}"
+          config_import:
+            steps:
+            - task: tools.drush.exec
+              arguments:
+                title: "Drush :: config:import"
+                cmd: config:import
+                site_dir: "{{.site_dir}}"
+                flags: "{{.flags}}"
+          updatedb:
+            steps:
+            - task: tools.drush.exec
+              arguments:
+                title: "Drush :: updatedb"
+                cmd: updatedb
+                site_dir: "{{.site_dir}}"
+                flags: "{{.flags}}"
+          entity_updates:
+            steps:
+            - task: tools.drush.exec
+              arguments:
+                title: "Drush :: entity:updates"
+                cmd: entity:updates
+                site_dir: "{{.site_dir}}"
+                flags: "{{.flags}}"
+          cache_rebuild:
+            steps:
+            - task: tools.drush.exec
+              arguments:
+                title: "Drush :: cache:rebuild"
+                cmd: cache:rebuild
+                site_dir: "{{.site_dir}}"
+                flags: "{{.flags}}"
 
-  docker:
-    tasks:
-      run:
+      yarn:
         parameters:
-        - name: executable
+        - name: dir
           type: string
-          default: docker
-        - name: image
-          type: string
-        - name: cmd
-          type: string
-        - name: flags
-          type: string
-          default: --rm
-        - name: shell_prefix
-          type: string
-          default: /bin/bash -c
-        - name: volumes
-          type: string
-          default: -v "${PWD}:${PWD}"
-        - name: working_dir
-          type: string
-          default: -w ${PWD}
-        steps:
-        - task: exec
-          arguments:
-            mode: local_current_dir
-            cmd: |
-              {{.executable}} run {{.flags}} {{.volumes}} {{.working_dir}} {{.image}} {{.shell_prefix}} '{{.cmd}}'
-      variant_exec:
-        parameters:
-        - name: flags
-          type: string
-          default: 'VARIANT_LOG_COLOR_WARN="yellow" VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
-        - name: executable
-          type: string
-          default: variant
-        - name: cmd
-          type: string
-        - name: image
-          type: string
-          default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
-        - name: volumes
-          type: string
-          default: -v "${PWD}:${PWD}"
-        - name: working_dir
-          type: string
-          default: -w ${PWD}
-        steps:
-        - task: docker.run
-          arguments:
-            cmd: "{{.flags}} {{.executable}} {{.cmd}}"
-            image: "{{.image}}"
-            volumes: "{{.volumes}}"
-            working_dir: "{{.working_dir}}"
-      variant:
-        parameters:
-        - name: exec.exec_dir
-        - name: ssh.server.user
-        - name: cmd
-          type: string
-        - name: image
-          type: string
-          default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
-        steps:
-        - task: docker.variant_exec
-          arguments:
-            cmd: "{{.cmd}}"
-            image: "{{.image}}"
-            volumes: -v "${PWD}:${PWD}"
-            working_dir: -w ${PWD}
-
-  stages:
-    tasks:
-      init:
-        parameters:
-        - name: general.setup.keys
-        # Actual init would be executed as part of above "parameters" processing.
-        script: echo "Init..."
-      deploy:
         tasks:
-          direct:
+          build:
+            parameters:
+            - name: install_options
+              type: string
+              default: ""
+            - name: target
+              type: string
+              default: build
+            steps:
+            - task: exec
+              arguments:
+                title: "Yarn :: build :: {{.target}}"
+                cmd: |
+                  cd {{.dir}}
+                  yarn{{.install_options}}
+                  yarn {{.target}}
             tasks:
-              before:
-                tasks:
-                  drupal:
-                    tasks:
-                      site:
-                        parameters:
-                        - name: site_dir
-                          type: string
-                          default: default
-                        steps:
-                        - task: drupal.files.fix_permissions
-                          arguments:
-                            site_dir: '{{.site_dir}}'
-              deliver:
+              dev:
                 steps:
-                - task: git.pull
-              build:
-                tasks:
-                  drupal:
-                    steps:
-                    - task: composer.install
-              after:
-                tasks:
-                  drupal:
-                    tasks:
-                      common:
-                        steps:
-                        - task: drupal.files.env_file_link
-                      site:
-                        parameters:
-                        - name: site_dir
-                          type: string
-                          default: default
-                        steps:
-                        - task: drupal.files.shared_files_link
-                          arguments:
-                            site_dir: '{{.site_dir}}'
-                        - task: drupal.files.fix_permissions
-                          arguments:
-                            site_dir: '{{.site_dir}}'
+                - task: tools.yarn.build
+                  arguments:
+                    install_options: " --frozen-lockfile --ignore-optional --non-interactive"
+
+      docker:
+        tasks:
+          run:
+            parameters:
+            - name: executable
+              type: string
+              default: docker
+            - name: image
+              type: string
+            - name: cmd
+              type: string
+            - name: flags
+              type: string
+              default: --rm
+            - name: shell_prefix
+              type: string
+              default: /bin/bash -c
+            - name: volumes
+              type: string
+              default: -v "${PWD}:${PWD}"
+            - name: working_dir
+              type: string
+              default: -w ${PWD}
+            steps:
+            - task: exec
+              arguments:
+                mode: local_current_dir
+                cmd: |
+                  {{.executable}} run {{.flags}} {{.volumes}} {{.working_dir}} {{.image}} {{.shell_prefix}} '{{.cmd}}'
+          variant_exec:
+            parameters:
+            - name: flags
+              type: string
+              default: 'VARIANT_LOG_COLOR_WARN="yellow" VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
+            - name: executable
+              type: string
+              default: variant
+            - name: cmd
+              type: string
+            - name: image
+              type: string
+              default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
+            - name: volumes
+              type: string
+              default: -v "${PWD}:${PWD}"
+            - name: working_dir
+              type: string
+              default: -w ${PWD}
+            steps:
+            - task: tools.docker.run
+              arguments:
+                cmd: "{{.flags}} {{.executable}} {{.cmd}}"
+                image: "{{.image}}"
+                volumes: "{{.volumes}}"
+                working_dir: "{{.working_dir}}"
+          variant:
+            parameters:
+            - name: exec.exec_dir
+            - name: ssh.server.user
+            - name: cmd
+              type: string
+            - name: image
+              type: string
+              default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
+            steps:
+            - task: tools.docker.variant_exec
+              arguments:
+                cmd: "{{.cmd}}"
+                image: "{{.image}}"
+                volumes: -v "${PWD}:${PWD}"
+                working_dir: -w ${PWD}
+
+  # stages:
+    # tasks:
+      # init:
+        # parameters:
+        # - name: tools.general.setup.keys
+        # # Actual init would be executed as part of above "parameters" processing.
+        # script: echo "Init..."
+      # deploy:
+        # tasks:
+          # direct:
+            # tasks:
+              # before:
+                # tasks:
+                  # drupal:
+                    # tasks:
+                      # site:
+                        # parameters:
+                        # - name: site_dir
+                          # type: string
+                          # default: default
+                        # steps:
+                        # - task: tools.drupal.files.fix_permissions
+                          # arguments:
+                            # site_dir: '{{.site_dir}}'
+              # deliver:
+                # steps:
+                # - task: tools.git.pull
+              # build:
+                # tasks:
+                  # drupal:
+                    # steps:
+                    # - task: tools.composer.install
+              # after:
+                # tasks:
+                  # drupal:
+                    # tasks:
+                      # common:
+                        # steps:
+                        # - task: tools.drupal.files.env_file_link
+                      # site:
+                        # parameters:
+                        # - name: site_dir
+                          # type: string
+                          # default: default
+                        # steps:
+                        # - task: tools.drupal.files.shared_files_link
+                          # arguments:
+                            # site_dir: '{{.site_dir}}'
+                        # - task: tools.drupal.files.fix_permissions
+                          # arguments:
+                            # site_dir: '{{.site_dir}}'
+
