@@ -551,8 +551,6 @@ tasks:
                 working_dir: "{{.working_dir}}"
           variant:
             parameters:
-            - name: exec.exec_dir
-            - name: ssh.server.user
             - name: cmd
               type: string
             - name: image
