@@ -1,3 +1,7 @@
+Version 0.2.3:
+ - Add lighthouse task
+ - Change exec task: add flags
+
 Version 0.2.2:
  - Remove unneeded params from docker variant task
 
