@@ -160,6 +160,68 @@ tasks:
 
   tools:
     tasks:
+      lighthouse:
+        steps:
+        - task: tools.lighthouse.init
+        - task: tools.lighthouse.clean
+        - task: tools.lighthouse.test
+        tasks:
+          init:
+            steps:
+            - task: exec
+              arguments:
+                title: "Lighthouse :: init"
+                cmd: |
+                  npm install
+          clean:
+            steps:
+            - task: exec
+              arguments:
+                title: "Lighthouse :: clean"
+                cmd: |
+                  gulp clean
+          test:
+            steps:
+            - task: exec
+              arguments:
+                title: "Lighthouse :: test"
+                cmd: |
+                  gulp
+          params:
+            script: |
+              cat <<YAML
+              # - PROTOCOL
+              # - DOMAIN
+              # - URL
+              - USER_NAME
+              - USER_PASS
+              - AUTH
+              - AUTH_URL
+              - EXTRA_HEADERS
+              # - EMULATED_FORM_FACTOR
+          docker:
+            tasks:
+            parameters:
+            - name: tools.lighthouse.params
+              type: object
+            - name: protocol
+              type: string
+              default: "https://"
+            - name: domain
+              type: string
+              default: www.google.com
+            - name: url
+              type: string
+              default: ""
+            - name: emulated_form_factor
+              type: string
+              default: "desktop"
+            steps:
+            - task: tools.docker.variant
+              arguments:
+                cmd: tools lighthouse
+                image: michaeltigr/zebra-lighthouse:fedora-latest
+                env_vars: '-e {{ get "tools.lighthouse.params" | join " -e " }} -e PROTOCOL="{{.protocol}}" -e DOMAIN="{{.domain}}" -e URL="{{.url}}" -e EMULATED_FORM_FACTOR="{{.emulated_form_factor}}"'
       ssh:
         tasks:
           copy_id_rsa:
@@ -521,17 +583,20 @@ tasks:
             - name: working_dir
               type: string
               default: -w ${PWD}
+            - name: env_vars
+              type: string
+              default: ""
             steps:
             - task: exec
               arguments:
                 mode: local_current_dir
                 cmd: |
-                  {{.executable}} run {{.flags}} {{.volumes}} {{.working_dir}} {{.image}} {{.shell_prefix}} '{{.cmd}}'
+                  {{.executable}} run {{.flags}} {{.volumes}} {{.working_dir}} {{.env_vars}} --env-file <(env | grep VARIANT_) {{.image}} {{.shell_prefix}} '{{.cmd}}'
           variant_exec:
             parameters:
             - name: flags
               type: string
-              default: 'VARIANT_LOG_COLOR_WARN="yellow" VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
+              default: 'VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
             - name: executable
               type: string
               default: variant
@@ -546,6 +611,9 @@ tasks:
             - name: working_dir
               type: string
               default: -w ${PWD}
+            - name: env_vars
+              type: string
+              default: ""
             steps:
             - task: tools.docker.run
               arguments:
@@ -553,6 +621,7 @@ tasks:
                 image: "{{.image}}"
                 volumes: "{{.volumes}}"
                 working_dir: "{{.working_dir}}"
+                env_vars: "{{.env_vars}}"
           variant:
             parameters:
             - name: cmd
@@ -560,13 +629,21 @@ tasks:
             - name: image
               type: string
               default: "michaeltigr/zebra-build-php-drush-tools:0.0.1"
+            - name: flags
+              type: string
+              default: 'VARIANT_FLAGS_EXEC_MODE="local_current_dir"'
+            - name: env_vars
+              type: string
+              default: ""
             steps:
             - task: tools.docker.variant_exec
               arguments:
+                flags: "{{.flags}}"
                 cmd: "{{.cmd}}"
                 image: "{{.image}}"
                 volumes: -v "${PWD}:${PWD}"
                 working_dir: -w ${PWD}
+                env_vars: "{{.env_vars}}"
 
   # stages:
     # tasks:
@@ -619,4 +696,5 @@ tasks:
                         # - task: tools.drupal.files.fix_permissions
                           # arguments:
                             # site_dir: '{{.site_dir}}'
+
 
