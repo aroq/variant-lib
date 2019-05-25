@@ -44,16 +44,20 @@ tasks:
       default: "pwd"
     - name: mode
       type: string
-      default: local
+      default: local_current_dir
     - name: sudo_user
       type: string
+      default: ""
     - name: verbose
       type: string
       default: "true"
+    - name: flags
+      type: string
+      default: ""
     steps:
     - script: |
         cmd_info () {
-          CMD={{.cmd | trimSuffix "\n" | quote | replace "\\n" "\n" }}
+          CMD={{list .flags .cmd | join " " | trimSuffix "\n" | quote | replace "\\n" "\n" }}
           CMD_TITLE=${1}
           CMD_DIR=${2:-"$(pwd)"}
           CMD_SSH_HOST=${3:-}
@@ -85,22 +89,22 @@ tasks:
         elif [ "{{ .mode }}" = "local_current_dir" ]; then
           cmd_info "{{.title}}"
           set -e;
-          {{.cmd}}
+          {{list .flags .cmd | join " "}}
         elif [ "{{ .mode }}" = "local" ]; then
           cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}"
           set -e;
           cd {{.exec_dir}}/{{.subdir}};
-          {{.cmd}}
+          {{list .flags .cmd | join " "}}
         elif [ "{{ .mode }}" = "gitlab_docker" ]; then
           cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}"
           set -e;
           cd {{.exec_dir}}/{{.subdir}};
-          {{.cmd}}
+          {{list .flags .cmd | join " "}}
         elif [ "{{ .mode }}" = "gitlab_shell" ]; then
           cmd_info "{{.title}}" "{{.exec_dir}}/{{.subdir}}"
           set -e;
           cd {{.exec_dir}}/{{.subdir}};
-          {{.cmd}}
+          {{list .flags .cmd | join " "}}
         else
           printf "\e[31mexec mode is not defined properly\e[0m\n"
         fi
