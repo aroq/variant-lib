@@ -1,3 +1,6 @@
+Version 0.2.5:
+ - Add > /dev/null to artifact git clone task
+
 Version 0.2.4:
  - Add --quiet option to artifact git clone task
 
