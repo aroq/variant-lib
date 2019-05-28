@@ -1,3 +1,6 @@
+Version 0.2.4:
+ - Add --quiet option to artifact git clone task
+
 Version 0.2.3:
  - Add lighthouse task
  - Change exec task: add flags
