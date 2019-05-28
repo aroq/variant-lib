@@ -154,7 +154,7 @@ tasks:
                 cmd: |
                   mkdir -p {{.artifacts_dir}}
                   rm -rf {{.artifacts_dir}}/{{.artifact_dir}}
-                  git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}}
+                  git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}} > /dev/null
                   tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
                   rm -rf {{.artifacts_dir}}
 
