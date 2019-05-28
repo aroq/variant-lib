@@ -144,7 +144,7 @@ tasks:
             parameters:
             - name: clone_options
               type: string
-              default: --single-branch --depth 1
+              default: --single-branch --depth 1 --quiet
             - name: repo
               type: string
             steps:
