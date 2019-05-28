@@ -1,3 +1,6 @@
+Version 0.2.6:
+ - Set &> /dev/null to artifact git clone task
+
 Version 0.2.5:
  - Add > /dev/null to artifact git clone task
 
