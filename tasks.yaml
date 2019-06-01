@@ -190,38 +190,26 @@ tasks:
           params:
             script: |
               cat <<YAML
-              # - PROTOCOL
-              # - DOMAIN
-              # - URL
+              - PROTOCOL
+              - DOMAIN
+              - URL
               - USER_NAME
               - USER_PASS
               - AUTH
               - AUTH_URL
               - EXTRA_HEADERS
-              # - EMULATED_FORM_FACTOR
+              - EMULATED_FORM_FACTOR
           docker:
             tasks:
             parameters:
             - name: tools.lighthouse.params
               type: object
-            - name: protocol
-              type: string
-              default: "https://"
-            - name: domain
-              type: string
-              default: www.google.com
-            - name: url
-              type: string
-              default: ""
-            - name: emulated_form_factor
-              type: string
-              default: "desktop"
             steps:
             - task: tools.docker.variant
               arguments:
                 cmd: tools lighthouse
                 image: michaeltigr/zebra-lighthouse:fedora-latest
-                env_vars: '-e {{ get "tools.lighthouse.params" | join " -e " }} -e PROTOCOL="{{.protocol}}" -e DOMAIN="{{.domain}}" -e URL="{{.url}}" -e EMULATED_FORM_FACTOR="{{.emulated_form_factor}}"'
+                env_vars: '-e {{ get "tools.lighthouse.params" | join " -e " }}'
       ssh:
         tasks:
           copy_id_rsa:
