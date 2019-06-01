@@ -160,6 +160,41 @@ tasks:
 
   tools:
     tasks:
+      lh:
+        parameters:
+        - name: URL
+          type: string
+          default: ""
+        - name: DOMAIN
+          type: string
+          default: ""
+        - name: PROTOCOL
+          type: string
+          default: "https://"
+        - name: USER_NAME
+          type: string
+          default: ""
+        - name: USER_PASS
+          type: string
+          default: ""
+        - name: AUTH
+          type: string
+          default: ""
+        - name: AUTH_URL
+          type: string
+          default: ""
+        - name: EXTRA_HEADERS
+          type: string
+          default: ""
+        - name: EMULATED_FORM_FACTOR
+          type: string
+          default: ""
+        autoenv: true
+        steps:
+        - script: |
+            cd lighthouse
+            ./lh
+            open reports/report.html
       lighthouse:
         steps:
         - task: tools.lighthouse.init
