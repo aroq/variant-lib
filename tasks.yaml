@@ -562,6 +562,9 @@ tasks:
         - name: dir
           type: string
         tasks:
+          clean:
+            steps:
+            - script: rm -fR {{.dir}}/node_modules
           build:
             parameters:
             - name: install_options
@@ -721,5 +724,7 @@ tasks:
                         # - task: tools.drupal.files.fix_permissions
                           # arguments:
                             # site_dir: '{{.site_dir}}'
+
+
 
 
