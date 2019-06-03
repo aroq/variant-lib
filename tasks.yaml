@@ -563,8 +563,11 @@ tasks:
           type: string
         tasks:
           clean:
-            steps:
-            - script: rm -fR {{.dir}}/node_modules
+            - task: exec
+              arguments:
+                title: "Yarn :: clean :: {{.dir}}/node_modules"
+                cmd: |
+                  rm -fR {{.dir}}/node_modules
           build:
             parameters:
             - name: install_options
