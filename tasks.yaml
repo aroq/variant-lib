@@ -673,57 +673,57 @@ tasks:
                 working_dir: -w ${PWD}
                 env_vars: "{{.env_vars}}"
 
-  # stages:
-    # tasks:
-      # init:
-        # parameters:
-        # - name: tools.general.setup.keys
-        # # Actual init would be executed as part of above "parameters" processing.
-        # script: echo "Init..."
-      # deploy:
-        # tasks:
-          # direct:
-            # tasks:
-              # before:
-                # tasks:
-                  # drupal:
-                    # tasks:
-                      # site:
-                        # parameters:
-                        # - name: site_dir
-                          # type: string
-                          # default: default
-                        # steps:
-                        # - task: tools.drupal.files.fix_permissions
-                          # arguments:
-                            # site_dir: '{{.site_dir}}'
-              # deliver:
-                # steps:
-                # - task: tools.git.pull
-              # build:
-                # tasks:
-                  # drupal:
-                    # steps:
-                    # - task: tools.composer.install
-              # after:
-                # tasks:
-                  # drupal:
-                    # tasks:
-                      # common:
-                        # steps:
-                        # - task: tools.drupal.files.env_file_link
-                      # site:
-                        # parameters:
-                        # - name: site_dir
-                          # type: string
-                          # default: default
-                        # steps:
-                        # - task: tools.drupal.files.shared_files_link
-                          # arguments:
-                            # site_dir: '{{.site_dir}}'
-                        # - task: tools.drupal.files.fix_permissions
-                          # arguments:
-                            # site_dir: '{{.site_dir}}'
+  stages:
+    tasks:
+      init:
+        parameters:
+        - name: tools.general.setup.keys
+        # Actual init would be executed as part of above "parameters" processing.
+        script: echo "Init..."
+      deploy:
+        tasks:
+          direct:
+            tasks:
+              before:
+                tasks:
+                  drupal:
+                    tasks:
+                      site:
+                        parameters:
+                        - name: site_dir
+                          type: string
+                          default: default
+                        steps:
+                        - task: tools.drupal.files.fix_permissions
+                          arguments:
+                            site_dir: '{{.site_dir}}'
+              deliver:
+                steps:
+                - task: tools.git.pull
+              build:
+                tasks:
+                  drupal:
+                    steps:
+                    - task: tools.composer.install
+              after:
+                tasks:
+                  drupal:
+                    tasks:
+                      common:
+                        steps:
+                        - task: tools.drupal.files.env_file_link
+                      site:
+                        parameters:
+                        - name: site_dir
+                          type: string
+                          default: default
+                        steps:
+                        - task: tools.drupal.files.shared_files_link
+                          arguments:
+                            site_dir: '{{.site_dir}}'
+                        - task: tools.drupal.files.fix_permissions
+                          arguments:
+                            site_dir: '{{.site_dir}}'
 
 
 
