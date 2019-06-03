@@ -1,3 +1,11 @@
+Version 0.2.9:
+ - Update yarn clean task
+ - Update yarn clean task
+ - Restore stages
+ - Add yarn clean task
+ - Move lh task to test section
+ - Add local lighthouse task: lh
+
 Version 0.2.8:
  - Remove unneeded params from lighthouse task
 
