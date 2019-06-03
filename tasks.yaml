@@ -563,6 +563,7 @@ tasks:
           type: string
         tasks:
           clean:
+            steps:
             - task: exec
               arguments:
                 title: "Yarn :: clean :: {{.dir}}/node_modules"
