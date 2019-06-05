@@ -1,3 +1,7 @@
+Version 0.3.0:
+ - Set interactive mode for docker and exec tasks
+ - Add k6 task
+
 Version 0.2.9:
  - Update yarn clean task
  - Update yarn clean task
