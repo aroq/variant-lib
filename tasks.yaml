@@ -17,6 +17,7 @@ tasks:
           default: ""
         script: ssh -v {{.user}}@{{.host}}
   exec:
+    interactive: true
     parameters:
     - name: ssh.server.project_root_dir
       type: string
@@ -643,7 +644,7 @@ tasks:
               type: string
             - name: flags
               type: string
-              default: --rm -t
+              default: --rm -it
             - name: volumes
               type: string
               default: -v "${PWD}:${PWD}"
@@ -770,4 +771,3 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
-
