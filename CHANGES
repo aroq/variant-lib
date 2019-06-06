@@ -1,3 +1,6 @@
+Version 0.3.1:
+ - Change docker run options
+
 Version 0.3.0:
  - Set interactive mode for docker and exec tasks
  - Add k6 task
