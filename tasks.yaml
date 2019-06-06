@@ -197,17 +197,18 @@ tasks:
             ./lh
             open reports/report.html
       k6:
-        parameters:
-        - name: K6_HOSTNAME
-          type: string
-          default: ""
         tasks:
-          run:
+          direct:
             steps:
-            - task: tools.k6.docker
+            - task: tools.k6
               arguments:
-                cmd: run {{ .args | join " " }}
-                env_vars: -e K6_HOSTNAME={{.K6_HOSTNAME}}
+                env_vars: K6_HOSTNAME={{.K6_HOSTNAME}}
+                cmd: '{{ .args | join " " }}'
+        steps:
+        - task: tools.k6.docker
+          arguments:
+            cmd: '{{ .args | join " " }}'
+            env_vars: -e K6_HOSTNAME={{.K6_HOSTNAME}}
   tools:
     tasks:
       lighthouse:
@@ -260,22 +261,21 @@ tasks:
                 image: michaeltigr/zebra-lighthouse:fedora-latest
                 env_vars: '-e {{ get "tools.lighthouse.params" | join " -e " }}'
       k6:
+        parameters:
+        - name: cmd
+          type: string
+        - name: env_vars
+          type: string
+          default: ""
         steps:
-        - task: tools.k6.test
+        - task: exec
+          arguments:
+            title: "K6 :: test"
+            cmd: |
+              {{ .env_vars }} k6 {{ .cmd }}
         tasks:
-          test:
-            steps:
-            - task: exec
-              arguments:
-                title: "K6 :: test"
-                cmd: |
-                  k6
           docker:
             parameters:
-            - name: cmd
-              type: string
-            - name: env_vars
-              type: string
             steps:
             - task: tools.docker.run
               arguments:
@@ -772,3 +772,4 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
