@@ -283,6 +283,7 @@ tasks:
                 image: aroq/testline:latest
                 env_file: "--env-file <(env | grep K6_)"
                 env_vars: "{{ .env_vars }}"
+                flags: --rm -it
       ssh:
         tasks:
           copy_id_rsa:
@@ -644,7 +645,7 @@ tasks:
               type: string
             - name: flags
               type: string
-              default: --rm -it
+              default: --rm -t
             - name: volumes
               type: string
               default: -v "${PWD}:${PWD}"
