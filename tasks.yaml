@@ -280,7 +280,7 @@ tasks:
             - task: tools.docker.run
               arguments:
                 cmd: "{{ .cmd }}"
-                image: aroq/testline:latest
+                image: loadimpact/k6
                 env_file: "--env-file <(env | grep K6_)"
                 env_vars: "{{ .env_vars }}"
                 flags: --rm -it
@@ -772,4 +772,3 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
-
