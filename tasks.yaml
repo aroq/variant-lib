@@ -302,10 +302,12 @@ tasks:
               - task: tools.k6.docker
                 arguments:
                   cmd: "{{.cmd}}"
+                  env_vars: "{{ .env_vars }}"
               else:
               - task: tools.k6
                 arguments:
                   cmd: "{{.cmd}}"
+                  env_vars: "{{ .env_vars }}"
           docker:
             parameters:
             steps:
