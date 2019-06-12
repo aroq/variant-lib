@@ -1,17 +1,24 @@
 tasks:
   conditions:
     tasks:
+      context:
+        tasks:
+          local:
+            interactive: true
+            script: |
+              # Check if running in the interactive mode.
+              tty -s
       run_in_docker:
         parameters:
         - name: enabled
           type: boolean
           default: true
         script: |
-          echo "Enabled: {{ .enabled }}"
           if [ -f /.dockerenv ]; then
               # Docker in Docker is not implemented.
               exit 1;
           else
+              echo "Run in docker enabled: {{ .enabled }}"
               if [ "{{ .enabled }}" == "false" ]; then
                 exit 1;
               fi
@@ -227,6 +234,8 @@ tasks:
             - task: exec
               arguments:
                 title: "Lighthouse :: init"
+                mode: local
+                exec_dir: plugins/lighthouse
                 cmd: |
                   npm install
           clean:
@@ -234,6 +243,8 @@ tasks:
             - task: exec
               arguments:
                 title: "Lighthouse :: clean"
+                mode: local
+                exec_dir: plugins/lighthouse
                 cmd: |
                   gulp clean
           test:
@@ -241,6 +252,8 @@ tasks:
             - task: exec
               arguments:
                 title: "Lighthouse :: test"
+                mode: local
+                exec_dir: plugins/lighthouse
                 cmd: |
                   gulp
           params:
@@ -260,14 +273,19 @@ tasks:
             - if:
               - task: conditions.run_in_docker
               then:
-              - script: cd plugins/lighthouse
               - task: tools.lighthouse.docker
                 arguments:
                   dir: plugins/lighthouse
               else:
-              - task: tools.k6
+              - task: tools.lighthouse
                 arguments:
                   cmd: "{{.cmd}}"
+            - if:
+              - task: conditions.context.local
+              then:
+              - task: exec
+                arguments:
+                  cmd: open plugins/lighthouse/reports/report.html
           docker:
             config:
               autoenv: false
@@ -745,6 +763,9 @@ tasks:
             - name: env_vars
               type: string
               default: ""
+            - name: working_dir
+              type: string
+              default: -w ${PWD}
             steps:
             - task: tools.docker.variant_exec
               arguments:
@@ -752,7 +773,7 @@ tasks:
                 cmd: "{{.cmd}}"
                 image: "{{.image}}"
                 volumes: -v "${PWD}:${PWD}"
-                working_dir: -w ${PWD}
+                working_dir: "{{.working_dir}}"
                 env_vars: "{{.env_vars}}"
 
   stages:
