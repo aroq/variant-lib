@@ -1,4 +1,22 @@
 tasks:
+  conditions:
+    tasks:
+      run_in_docker:
+        parameters:
+        - name: enabled
+          type: boolean
+          default: true
+        script: |
+          echo "Enabled: {{ .enabled }}"
+          if [ -f /.dockerenv ]; then
+              # Docker in Docker is not implemented.
+              exit 1;
+          else
+              if [ "{{ .enabled }}" == "false" ]; then
+                exit 1;
+              fi
+              exit 0;
+          fi
   ssh:
     tasks:
       server:
@@ -196,19 +214,6 @@ tasks:
             cd plugins/lighthouse
             ./lh
             open reports/report.html
-      k6:
-        tasks:
-          direct:
-            steps:
-            - task: tools.k6
-              arguments:
-                env_vars: K6_HOSTNAME={{.K6_HOSTNAME}}
-                cmd: '{{ .args | join " " }}'
-        steps:
-        - task: tools.k6.docker
-          arguments:
-            cmd: '{{ .args | join " " }}'
-            env_vars: -e K6_HOSTNAME={{.K6_HOSTNAME}}
   tools:
     tasks:
       lighthouse:
@@ -250,7 +255,22 @@ tasks:
               - AUTH_URL
               - EXTRA_HEADERS
               - EMULATED_FORM_FACTOR
+          exec:
+            steps:
+            - if:
+              - task: conditions.run_in_docker
+              then:
+              - script: cd plugins/lighthouse
+              - task: tools.lighthouse.docker
+                arguments:
+                  dir: plugins/lighthouse
+              else:
+              - task: tools.k6
+                arguments:
+                  cmd: "{{.cmd}}"
           docker:
+            config:
+              autoenv: false
             parameters:
             - name: tools.lighthouse.params
               type: object
@@ -274,6 +294,18 @@ tasks:
             cmd: |
               {{ .env_vars }} k6 {{ .cmd }}
         tasks:
+          exec:
+            steps:
+            - if:
+              - task: conditions.run_in_docker
+              then:
+              - task: tools.k6.docker
+                arguments:
+                  cmd: "{{.cmd}}"
+              else:
+              - task: tools.k6
+                arguments:
+                  cmd: "{{.cmd}}"
           docker:
             parameters:
             steps:
@@ -772,3 +804,4 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
