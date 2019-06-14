@@ -215,7 +215,6 @@ tasks:
         - name: EMULATED_FORM_FACTOR
           type: string
           default: ""
-        autoenv: true
         steps:
         - script: |
             cd plugins/lighthouse
@@ -287,8 +286,6 @@ tasks:
                 arguments:
                   cmd: open plugins/lighthouse/reports/report.html
           docker:
-            config:
-              autoenv: false
             parameters:
             - name: tools.lighthouse.params
               type: object
@@ -314,6 +311,7 @@ tasks:
         tasks:
           exec:
             steps:
+            - script: echo "exec - K6_HOSTNAME = ${K6_HOSTNAME}"
             - if:
               - task: conditions.run_in_docker
               then:
