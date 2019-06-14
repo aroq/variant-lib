@@ -1,13 +1,6 @@
 tasks:
   conditions:
     tasks:
-      context:
-        tasks:
-          local:
-            interactive: true
-            script: |
-              # Check if running in the interactive mode.
-              tty -s
       run_in_docker:
         parameters:
         - name: enabled
@@ -137,6 +130,17 @@ tasks:
 
   utils:
     tasks:
+      open:
+        parameters:
+        - name: file
+          type: string
+        steps:
+        - script: |
+            if [[ "$OSTYPE" == "linux-gnu" ]]; then
+                    # ...
+            elif [[ "$OSTYPE" == "darwin"* ]]; then
+              open "{{.file}}"
+            fi
       setup:
         tasks:
           keys:
@@ -184,42 +188,6 @@ tasks:
                   tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
                   rm -rf {{.artifacts_dir}}
 
-  test:
-    tasks:
-      lh:
-        parameters:
-        - name: URL
-          type: string
-          default: ""
-        - name: DOMAIN
-          type: string
-          default: ""
-        - name: PROTOCOL
-          type: string
-          default: "https://"
-        - name: USER_NAME
-          type: string
-          default: ""
-        - name: USER_PASS
-          type: string
-          default: ""
-        - name: AUTH
-          type: string
-          default: ""
-        - name: AUTH_URL
-          type: string
-          default: ""
-        - name: EXTRA_HEADERS
-          type: string
-          default: ""
-        - name: EMULATED_FORM_FACTOR
-          type: string
-          default: ""
-        steps:
-        - script: |
-            cd plugins/lighthouse
-            ./lh
-            open reports/report.html
   tools:
     tasks:
       lighthouse:
@@ -282,9 +250,9 @@ tasks:
             - if:
               - task: conditions.context.local
               then:
-              - task: exec
+              - task: utils.open
                 arguments:
-                  cmd: open plugins/lighthouse/reports/report.html
+                  file: plugins/lighthouse/reports/report.html
           docker:
             parameters:
             - name: tools.lighthouse.params
