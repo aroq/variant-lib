@@ -1,3 +1,6 @@
+Version 0.37:
+ - Remove autoenv settings
+
 Version 0.3.6:
  - Refactor lighthouse tasks
 
