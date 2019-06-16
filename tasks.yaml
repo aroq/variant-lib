@@ -136,9 +136,7 @@ tasks:
           type: string
         steps:
         - script: |
-            if [[ "$OSTYPE" == "linux-gnu" ]]; then
-                    # ...
-            elif [[ "$OSTYPE" == "darwin"* ]]; then
+            if [[ "$OSTYPE" == "darwin"* ]]; then
               open "{{.file}}"
             fi
       setup:
