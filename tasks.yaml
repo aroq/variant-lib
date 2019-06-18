@@ -323,8 +323,10 @@ tasks:
         parameters:
         - name: repo
           type: string
+          default: ""
         - name: branch
           type: string
+          default: ""
         tasks:
           config:
             tasks:
@@ -383,7 +385,7 @@ tasks:
                 echo "Target repo - {{ .target_repo }}"
                 echo "Target branch - {{ .target_branch }}"
                 mkdir -p {{ .working_dir }}
-                cd {{.working_dir }}
+                cd {{ .working_dir }}
                 git clone {{ .tools.git.current_repo }} source
                 cd source
                 git remote add target {{ .target_repo }}
@@ -822,4 +824,5 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
 
