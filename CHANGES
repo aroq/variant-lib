@@ -1,3 +1,8 @@
+Version 0.3.9:
+ - Fix git sync task
+ - Add git sync task
+ - Fix OS detection
+
 Version 0.3.8:
  - Add open task
 
