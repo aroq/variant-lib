@@ -365,7 +365,7 @@ tasks:
             script: git config --get remote.origin.url
           sync:
             parameters:
-            - name: git.current_repo
+            - name: tools.git.current_repo
               default: ""
             - name: source_branch
               default: "master"
@@ -377,13 +377,14 @@ tasks:
               default: ".temp"
             steps:
             - script: |
-                echo "Source repo - {{ .git.current_repo }}"
+                rm -fR {{ .working_dir }}
+                echo "Source repo - {{ .tools.git.current_repo }}"
                 echo "Source branch - {{ .source_branch }}"
                 echo "Target repo - {{ .target_repo }}"
                 echo "Target branch - {{ .target_branch }}"
                 mkdir -p {{ .working_dir }}
                 cd {{.working_dir }}
-                git clone {{ .git.current_repo }} source
+                git clone {{ .tools.git.current_repo }} source
                 cd source
                 git remote add target {{ .target_repo }}
                 git checkout {{ .source_branch }}
