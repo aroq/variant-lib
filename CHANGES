@@ -1,3 +1,6 @@
+Version 0.4.0:
+ - Fix git task params
+
 Version 0.3.9:
  - Fix git sync task
  - Add git sync task
