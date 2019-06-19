@@ -327,6 +327,8 @@ tasks:
         - name: branch
           type: string
           default: ""
+        - name: GIT_SSH_COMMAND
+          default: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
         tasks:
           config:
             tasks:
@@ -366,6 +368,7 @@ tasks:
           current_repo:
             script: git config --get remote.origin.url
           sync:
+            autoenv: true
             parameters:
             - name: tools.git.current_repo
               default: ""
@@ -378,22 +381,21 @@ tasks:
             - name: working_dir
               default: ".temp"
             steps:
-            - script: |
-                rm -fR {{ .working_dir }}
-                echo "Source repo - {{ .tools.git.current_repo }}"
-                echo "Source branch - {{ .source_branch }}"
-                echo "Target repo - {{ .target_repo }}"
-                echo "Target branch - {{ .target_branch }}"
-                mkdir -p {{ .working_dir }}
-                cd {{ .working_dir }}
-                git clone {{ .tools.git.current_repo }} source
-                cd source
-                git remote add target {{ .target_repo }}
-                git checkout {{ .source_branch }}
-                git pull origin {{ .source_branch }}
-                git push -f target {{.target_branch }}
-                cd ../..
-                rm -fR {{ .working_dir }}
+            - task: exec
+              arguments:
+                title: "Git :: sync :: to external repo"
+                cmd: |
+                  rm -fR {{ .working_dir }}
+                  mkdir -p {{ .working_dir }}
+                  cd {{ .working_dir }}
+                  git clone {{ .tools.git.current_repo }} source
+                  cd source
+                  git remote add target {{ .target_repo }}
+                  git checkout {{ .source_branch }}
+                  git pull origin {{ .source_branch }}
+                  git push -f target {{.target_branch }}
+                  cd ../..
+                  rm -fR {{ .working_dir }}
 
       composer:
         tasks:
