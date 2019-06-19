@@ -380,6 +380,8 @@ tasks:
               default: "master"
             - name: working_dir
               default: ".temp"
+            - name: project_dir
+              default: "source"
             steps:
             - task: exec
               arguments:
@@ -388,8 +390,8 @@ tasks:
                   rm -fR {{ .working_dir }}
                   mkdir -p {{ .working_dir }}
                   cd {{ .working_dir }}
-                  git clone {{ .tools.git.current_repo }} source
-                  cd source
+                  git clone {{ .tools.git.current_repo }} {{ .project_dir }}
+                  cd {{ .project_dir }}
                   git remote add target {{ .target_repo }}
                   git checkout {{ .source_branch }}
                   git pull origin {{ .source_branch }}
@@ -826,5 +828,7 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
+
 
 
