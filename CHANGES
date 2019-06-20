@@ -1,3 +1,6 @@
+Version 0.4.3:
+ - Add gitlab snippets
+
 Version 0.4.2:
  - Add project dir param for git sync task
 
