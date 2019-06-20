@@ -1,3 +1,6 @@
+Version 0.4.4:
+ - Fix the working dir param default value for the git sync task
+
 Version 0.4.3:
  - Add gitlab snippets
 
