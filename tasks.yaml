@@ -379,7 +379,7 @@ tasks:
             - name: target_branch
               default: "master"
             - name: working_dir
-              default: ".temp"
+              default: "./variant/tools_git_sync"
             - name: project_dir
               default: "source"
             steps:

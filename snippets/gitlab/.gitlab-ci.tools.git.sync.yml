@@ -1,0 +1,6 @@
+.sync:
+  stage: sync
+  variables:
+    GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+  script:
+    - ./do tools git sync --source-branch="${CI_COMMIT_REF_NAME}" --target-branch="${CI_COMMIT_REF_NAME}" --project-dir="${CI_PROJECT_PATH_SLUG}"
