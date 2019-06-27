@@ -191,7 +191,7 @@ tasks:
       lighthouse:
         steps:
         - task: tools.lighthouse.init
-        - task: tools.lighthouse.clean
+        # - task: tools.lighthouse.clean
         - task: tools.lighthouse.test
         tasks:
           init:
@@ -828,7 +828,4 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
-
-
-
 
