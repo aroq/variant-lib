@@ -1,3 +1,6 @@
+Version 0.4.5:
+ - Disable lighthouse clean task
+
 Version 0.4.4:
  - Fix the working dir param default value for the git sync task
 
