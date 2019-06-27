@@ -1,3 +1,6 @@
+Version 0.4.6:
+ - Add release tasks
+
 Version 0.4.5:
  - Disable lighthouse clean task
 
