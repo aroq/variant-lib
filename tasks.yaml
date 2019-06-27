@@ -1,4 +1,58 @@
 tasks:
+  release:
+    tasks:
+      build:
+        steps:
+        - task: tools.git.config.identity
+        - task: tools.docman.init
+        - task: tools.docman.build.stable
+      deploy:
+        tasks:
+          deliver:
+            bind_env_vars: true
+            parameters:
+            - name: RELEASE
+            steps:
+            - task: utils.artifact.retrieve.git
+              arguments:
+                version: '{{.RELEASE}}'
+            - task: environment.tools.ansistrano.deploy
+
+  environment:
+    parameters:
+    - name: user
+    - name: project_root_dir
+    - name: deploy_environment
+    - name: host
+    tasks:
+      exec:
+        parameters:
+        - name: title
+          default: "Environment :: Exec"
+        - name: cmd
+          default: pwd
+        steps:
+        - task: exec
+          arguments:
+            title: "{{.title}}"
+            cmd: "{{.cmd}}"
+            mode: ssh
+            exec_dir: '{{.project_root_dir}}'
+            exec_dir_suffix: 'current/backend'
+            ssh.server.user: '{{.user}}'
+            ssh.server.host: '{{.host}}'
+      tools:
+        tasks:
+          ansistrano:
+            tasks:
+              deploy:
+                steps:
+                - task: tools.ansistrano.deploy
+                  arguments:
+                    user: "{{.user}}"
+                    ansistrano_deploy_to: "{{.project_root_dir}}"
+                    deploy_environment: "{{.deploy_environment}}"
+
   conditions:
     tasks:
       run_in_docker:
@@ -168,23 +222,25 @@ tasks:
           type: string
           default: master
         tasks:
-          git:
-            parameters:
-            - name: clone_options
-              type: string
-              default: --single-branch --depth 1 --quiet
-            - name: repo
-              type: string
-            steps:
-            - task: exec
-              arguments:
-                title: "Artifact :: Git {{.version}}"
-                cmd: |
-                  mkdir -p {{.artifacts_dir}}
-                  rm -rf {{.artifacts_dir}}/{{.artifact_dir}}
-                  git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}} &> /dev/null
-                  tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
-                  rm -rf {{.artifacts_dir}}
+          retrieve:
+            tasks:
+              git:
+                parameters:
+                - name: clone_options
+                  type: string
+                  default: --single-branch --depth 1 --quiet
+                - name: repo
+                  type: string
+                steps:
+                - task: exec
+                  arguments:
+                    title: "Artifact :: Retrieve :: Git :: {{.version}}"
+                    cmd: |
+                      mkdir -p {{.artifacts_dir}}
+                      rm -rf {{.artifacts_dir}}/{{.artifact_dir}}
+                      git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}} &> /dev/null
+                      tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
+                      rm -rf {{.artifacts_dir}}
 
   tools:
     tasks:
@@ -497,8 +553,6 @@ tasks:
         parameters:
         - name: user
           type: string
-        - name: host
-          type: string
         - name: ansistrano_deploy_to
           type: string
         - name: ansistrano_deploy_from
@@ -517,7 +571,7 @@ tasks:
                 title: "Ansistrano deploy {{.deploy_environment}}"
                 playbook: "deployWithAnsistrano.yml"
                 inventory_file: "{{.deploy_environment}}.inventory.yaml"
-                vars: '{"user":"{{.user}}","host":"{{.host}}","ansistrano_deploy_to":"{{.ansistrano_deploy_to}}","ansistrano_deploy_from":"{{.ansistrano_deploy_from}}","deploy_environment":"{{.deploy_environment}}","ansistrano_deploy_via":"{{.ansistrano_deploy_via}}"}'
+                vars: '{"user":"{{.user}}","ansistrano_deploy_to":"{{.ansistrano_deploy_to}}","ansistrano_deploy_from":"{{.ansistrano_deploy_from}}","deploy_environment":"{{.deploy_environment}}","ansistrano_deploy_via":"{{.ansistrano_deploy_via}}"}'
 
       goofys:
         tasks:
@@ -781,7 +835,7 @@ tasks:
     tasks:
       init:
         parameters:
-        - name: tools.general.setup.keys
+        # - name: tools.general.setup.keys
         # Actual init would be executed as part of above "parameters" processing.
         script: echo "Init..."
       deploy:
@@ -828,4 +882,6 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
+
 
