@@ -1,3 +1,6 @@
+Version 0.4.7:
+ - Refactor artifact & add cicd tasks
+
 Version 0.4.6:
  - Add release tasks
 
