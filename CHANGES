@@ -1,3 +1,6 @@
+Version 0.4.8:
+ - Change task name deploy -> deliver
+
 Version 0.4.7:
  - Refactor artifact & add cicd tasks
 
