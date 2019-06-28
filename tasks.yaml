@@ -1,22 +1,58 @@
 tasks:
-  release:
+  cicd:
     tasks:
-      build:
-        steps:
-        - task: tools.git.config.identity
-        - task: tools.docman.init
-        - task: tools.docman.build.stable
-      deploy:
+      release:
         tasks:
-          deliver:
+          build:
+            steps:
+            - task: tools.git.config.identity
+            - task: tools.docman.init
+            - task: tools.docman.build.stable
+          deploy:
             bind_env_vars: true
             parameters:
             - name: RELEASE
             steps:
-            - task: utils.artifact.retrieve.git
+            - task: cicd.artifact.build.git
               arguments:
                 version: '{{.RELEASE}}'
-            - task: environment.tools.ansistrano.deploy
+            - task: cicd.artifact.deliver.ansistrano
+      artifact:
+        tasks:
+          build:
+            parameters:
+            - name: version
+              type: string
+            - name: artifacts_dir
+              type: string
+              default: artifacts
+            - name: artifact_dir
+              type: string
+              default: master
+            tasks:
+              git:
+                parameters:
+                - name: clone_options
+                  type: string
+                  default: --single-branch --depth 1 --quiet
+                - name: repo
+                  type: string
+                steps:
+                - task: exec
+                  arguments:
+                    title: "Artifact :: Retrieve :: Git :: {{.version}}"
+                    cmd: |
+                      rm -rf {{.artifacts_dir}}
+                      mkdir -p {{.artifacts_dir}}
+                      git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}} &> /dev/null
+                      tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
+                      rm -rf {{.artifacts_dir}}
+
+          deliver:
+            tasks:
+              ansistrano:
+                steps:
+                - task: environment.tools.ansistrano.deploy
 
   environment:
     parameters:
@@ -211,37 +247,6 @@ tasks:
               then:
               - task: tools.goofys.mount
               - task: tools.ssh.copy_id_rsa
-      artifact:
-        parameters:
-        - name: version
-          type: string
-        - name: artifacts_dir
-          type: string
-          default: artifacts
-        - name: artifact_dir
-          type: string
-          default: master
-        tasks:
-          retrieve:
-            tasks:
-              git:
-                parameters:
-                - name: clone_options
-                  type: string
-                  default: --single-branch --depth 1 --quiet
-                - name: repo
-                  type: string
-                steps:
-                - task: exec
-                  arguments:
-                    title: "Artifact :: Retrieve :: Git :: {{.version}}"
-                    cmd: |
-                      mkdir -p {{.artifacts_dir}}
-                      rm -rf {{.artifacts_dir}}/{{.artifact_dir}}
-                      git clone -b {{.version}} {{.clone_options}} {{.repo}} {{.artifacts_dir}}/{{.artifact_dir}} &> /dev/null
-                      tar -czf {{.artifact_dir}}.tar.gz -C {{.artifacts_dir}}/{{.artifact_dir}} .
-                      rm -rf {{.artifacts_dir}}
-
   tools:
     tasks:
       lighthouse:
