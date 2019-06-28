@@ -8,7 +8,7 @@ tasks:
             - task: tools.git.config.identity
             - task: tools.docman.init
             - task: tools.docman.build.stable
-          deploy:
+          deliver:
             bind_env_vars: true
             parameters:
             - name: RELEASE
