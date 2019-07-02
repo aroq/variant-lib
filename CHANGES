@@ -1,3 +1,6 @@
+Version 0.5.4:
+ - Fix repo param for the backmerge task
+
 Version 0.5.3:
  - Add backmerge gitlab ci job template
 
