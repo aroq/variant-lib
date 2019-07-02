@@ -598,8 +598,6 @@ tasks:
 
           backmerge:
             parameters:
-            - name: repo
-              default: ""
             - name: source
               type: string
             - name: target
