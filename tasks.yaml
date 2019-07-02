@@ -170,6 +170,146 @@ tasks:
 
   utils:
     tasks:
+      bump:
+        parameters:
+        - name: repo
+          type: string
+          default: ''
+        - name: branch
+          type: string
+          default: master
+        - name: state
+          type: string
+          default: ''
+        - name: tag
+          type: string
+          default: ''
+        - name: skip
+          type: string
+          default: 'yes'
+        - name: next
+          type: string
+          default: 'yes'
+        steps:
+        - task: utils.setup.keys
+        - task: tools.git.config.identity
+        - script: |
+            WORKDIR="${PWD}"
+            if [[ "{{.repo}}" == "" ]]; then
+              echo "Use current directory repo for bump."
+            else
+              echo "Clone project repo for bump."
+              rm -rf artifacts/bump
+              git clone {{.repo}} artifacts/bump
+              cd artifacts/bump
+            fi
+            git fetch
+            git checkout {{.branch}}
+            git pull origin {{.branch}} 2>/dev/null || echo "Branch not found on origin."
+
+            if [ -f VERSION ]; then
+              BASE_STRING=`cat VERSION`
+              echo "Current version : $BASE_STRING"
+              if [[ $BASE_STRING =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([\.\-][0-9a-zA_Z_\-]+)?$ ]]; then
+                V_MAJOR=${BASH_REMATCH[1]}
+                V_MINOR=${BASH_REMATCH[2]}
+                V_PATCH=${BASH_REMATCH[3]}
+                V_SUFFIX=${BASH_REMATCH[4]}
+                V_PATCH=$((V_PATCH + 1))
+                SUGGESTED_VERSION="${V_PREFIX}${V_MAJOR}.${V_MINOR}.${V_PATCH}${V_SUFFIX}"
+              else
+                if [[ $BASE_STRING =~ ^([0-9a-zA_Z_\-]+[\-])([0-9]+)\.([0-9]+)\.([0-9]+)([\.\-][0-9a-zA_Z_\-]+)?$ ]]; then
+                  V_PREFIX=${BASH_REMATCH[1]}
+                  V_MAJOR=${BASH_REMATCH[2]}
+                  V_MINOR=${BASH_REMATCH[3]}
+                  V_PATCH=${BASH_REMATCH[4]}
+                  V_SUFFIX=${BASH_REMATCH[5]}
+                  V_PATCH=$((V_PATCH + 1))
+                  SUGGESTED_VERSION="${V_PREFIX}${V_MAJOR}.${V_MINOR}.${V_PATCH}${V_SUFFIX}"
+                fi
+              fi
+
+              if [[ "{{.tag}}" == "" ]]; then
+                if [ -n "$SUGGESTED_VERSION" ]; then
+                  if [[ "{{.next}}" == "yes" ]]; then
+                    INPUT_STRING=$SUGGESTED_VERSION
+                  else
+                    read -p "Enter a version number [$SUGGESTED_VERSION]: " INPUT_STRING
+                    if [ "$INPUT_STRING" = "" ]; then
+                      INPUT_STRING=$SUGGESTED_VERSION
+                    fi
+                  fi
+                else
+                  read -p "Enter a version number: " INPUT_STRING
+                  if [ "$INPUT_STRING" = "" ]; then
+                    echo "Version number should not be empty to continue."
+                    exit 1
+                  fi
+                fi
+              else
+                INPUT_STRING={{.tag}}
+              fi
+
+              echo "Will set new version to be $INPUT_STRING"
+              echo $INPUT_STRING > VERSION
+              TAG=${INPUT_STRING}
+              echo "Version $INPUT_STRING:" > tmpfile
+              git log --pretty=format:" - %s" "$BASE_STRING"...HEAD >> tmpfile
+              echo "" >> tmpfile
+              echo "" >> tmpfile
+              cat CHANGES >> tmpfile
+              mv tmpfile CHANGES
+              git add CHANGES VERSION
+              git commit -m "[skip] [ci-skip] [ci skip] Version bump to $INPUT_STRING"
+              git tag -a -m "[skip] [ci-skip] [ci skip] Tagging version $INPUT_STRING" "$INPUT_STRING"
+              git push origin ${INPUT_STRING}
+              git push origin {{.branch}}
+            else
+              echo "Could not find a VERSION file"
+              echo "0.1.0" > VERSION
+              echo "Version 0.1.0" > CHANGES
+              git log --pretty=format:" - %s" >> CHANGES
+              echo "" >> CHANGES
+              echo "" >> CHANGES
+              git add VERSION CHANGES
+              git commit -m "[skip] [ci-skip] [ci skip] Added VERSION and CHANGES files, Version bump to 0.1.0"
+              git tag -a -m "[skip] [ci-skip] [ci skip] Tagging version 0.1.0" "0.1.0"
+              git push origin --tags
+              git push origin {{.branch}}
+              TAG="0.1.0"
+            fi
+
+            if [ "{{.state}}" == "" ]; then
+              echo "Skip write state information."
+            else
+              echo "Write state information."
+              git fetch
+              STATE_BRANCH="state_{{.state}}"
+              #git show-ref --verify --quiet "refs/heads/${BRANCH}"
+              git ls-remote --exit-code . origin/state_stable &> /dev/null
+              if [ $? == 0 ]; then
+                git checkout ${STATE_BRANCH}
+                git pull origin ${STATE_BRANCH}
+              else
+                git checkout --orphan ${STATE_BRANCH}
+                git rm --cached -r .
+                git clean -f -d
+              fi
+              echo "type: tag" > info.yaml
+              echo "version: {{.tag}}" >> info.yaml
+              git add info.yaml
+              if [[ "{{.skip}}" == "yes" ]]; then
+                git commit -m "[skip] [ci-skip] [ci skip] Changed tag to: {{.tag}}"
+                git push -u origin ${STATE_BRANCH}
+              else
+                git commit -m "Changed tag to: {{.tag}}"
+                git push -u origin ${STATE_BRANCH}
+              fi
+              git checkout {{.branch}}
+              echo ${TAG}
+            fi
+            cd $WORKDIR
+
       artifact:
         tasks:
           build:
@@ -913,3 +1053,6 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
+
+
