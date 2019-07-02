@@ -1,3 +1,6 @@
+Version 0.5.5:
+ - Fix repo param
+
 Version 0.5.4:
  - Fix repo param for the backmerge task
 
