@@ -592,8 +592,43 @@ tasks:
                   git checkout {{.branch}}
                   git reset --hard origin/{{.branch}}
                   git pull origin {{.branch}}
+
           current_repo:
             script: git config --get remote.origin.url
+
+          backmerge:
+            parameters:
+            - name: tools.git.current_repo
+              default: ""
+            - name: source
+              type: string
+            - name: target
+              type: string
+            - name: working_dir
+              default: ".variant/tools_git_backmerge"
+            - name: project_dir
+              default: "source"
+            steps:
+            - task: tools.git.config.identity
+            - task: exec
+              arguments:
+                title: "Git :: backmerge :: {{.source}} -> {{.target}}"
+                cmd: |
+                  rm -fR {{ .working_dir }}/{{ .project_dir }}
+                  mkdir -p {{ .working_dir }}/{{ .project_dir }}
+                  cd {{ .working_dir }}/{{ .project_dir }}
+                  git init .
+                  git remote add -f origin {{ .tools.git.current_repo }}
+                  git fetch origin {{.source}}
+                  git checkout {{.source}}
+                  git pull origin {{.source}}
+                  git fetch origin {{.target}}
+                  git checkout {{.target}}
+                  git pull origin {{.target}}
+                  git merge {{.source}} --ff
+                  git push origin {{.target}}
+                  rm -fR {{ .working_dir }}/{{ .project_dir }}
+
           sync:
             autoenv: true
             parameters:
@@ -1054,3 +1089,5 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
+
