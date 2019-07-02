@@ -1,3 +1,6 @@
+Version 0.5.3:
+ - Add backmerge gitlab ci job template
+
 Version 0.5.2:
  - Add backmerge task
 
