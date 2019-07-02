@@ -1,3 +1,6 @@
+Version 0.51:
+ - Refactor bump command
+
 Version 0.5.0:
  - Add bump command
 
