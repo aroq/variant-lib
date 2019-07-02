@@ -598,7 +598,7 @@ tasks:
 
           backmerge:
             parameters:
-            - name: tools.git.current_repo
+            - name: repo
               default: ""
             - name: source
               type: string
@@ -618,7 +618,7 @@ tasks:
                   mkdir -p {{ .working_dir }}/{{ .project_dir }}
                   cd {{ .working_dir }}/{{ .project_dir }}
                   git init .
-                  git remote add -f origin {{ .tools.git.current_repo }}
+                  git remote add -f origin {{ .repo }}
                   git fetch origin {{.source}}
                   git checkout {{.source}}
                   git pull origin {{.source}}
