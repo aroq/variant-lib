@@ -1,3 +1,6 @@
+Version 0.5.0:
+ - Add bump command
+
 Version 0.4.9:
  - Refactor artifact tasks & remove cicd tasks
 
