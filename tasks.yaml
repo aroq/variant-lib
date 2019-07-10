@@ -614,17 +614,25 @@ tasks:
                 cmd: |
                   rm -fR {{ .working_dir }}/{{ .project_dir }}
                   mkdir -p {{ .working_dir }}/{{ .project_dir }}
+                  (
                   cd {{ .working_dir }}/{{ .project_dir }}
                   git init .
                   git remote add -f origin {{ .repo }}
-                  git fetch origin {{.source}}
-                  git checkout {{.source}}
-                  git pull origin {{.source}}
+
                   git fetch origin {{.target}}
                   git checkout {{.target}}
                   git pull origin {{.target}}
-                  git merge {{.source}} --ff
+
+                  git fetch origin {{.source}}
+                  git checkout {{.source}}
+                  git pull origin {{.source}}
+
+                  git rebase {{.target}}
+                  git checkout {{.target}}
+                  git merge --ff-only {{.source}}
+
                   git push origin {{.target}}
+                  )
                   rm -fR {{ .working_dir }}/{{ .project_dir }}
 
           sync:
@@ -649,6 +657,7 @@ tasks:
                 cmd: |
                   rm -fR {{ .working_dir }}
                   mkdir -p {{ .working_dir }}
+                  (
                   cd {{ .working_dir }}
                   git clone {{ .tools.git.current_repo }} {{ .project_dir }}
                   cd {{ .project_dir }}
@@ -656,7 +665,7 @@ tasks:
                   git checkout {{ .source_branch }}
                   git pull origin {{ .source_branch }}
                   git push -f target {{.target_branch }}
-                  cd ../..
+                  )
                   rm -fR {{ .working_dir }}
 
       composer:
@@ -1087,5 +1096,7 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
+
 
 
