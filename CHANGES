@@ -1,3 +1,6 @@
+Version 0.5.6:
+ - Update git sync & backmerge tasks
+
 Version 0.5.5:
  - Fix repo param
 
