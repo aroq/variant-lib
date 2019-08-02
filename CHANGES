@@ -1,3 +1,6 @@
+Version 0.5.8:
+ - Refactor k6 & lighthouse tasks
+
 Version 0.5.7:
  - Add backmerge merge strategy
 
