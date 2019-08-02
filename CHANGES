@@ -1,3 +1,6 @@
+Version 0.5.9:
+ - Refactor k6 task
+
 Version 0.5.8:
  - Refactor k6 & lighthouse tasks
 
