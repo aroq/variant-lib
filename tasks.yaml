@@ -416,6 +416,9 @@ tasks:
   tools:
     tasks:
       lighthouse:
+        parameters:
+        - name: plugin_dir
+          default: .toolbox/tools/lighthouse
         steps:
         - task: tools.lighthouse.init
         # - task: tools.lighthouse.clean
@@ -427,7 +430,7 @@ tasks:
               arguments:
                 title: "Lighthouse :: init"
                 mode: local
-                exec_dir: plugins/lighthouse
+                exec_dir: "{{.plugin_dir}}"
                 cmd: |
                   npm install
           clean:
@@ -436,7 +439,7 @@ tasks:
               arguments:
                 title: "Lighthouse :: clean"
                 mode: local
-                exec_dir: plugins/lighthouse
+                exec_dir: "{{.plugin_dir}}"
                 cmd: |
                   gulp clean
           test:
@@ -445,7 +448,7 @@ tasks:
               arguments:
                 title: "Lighthouse :: test"
                 mode: local
-                exec_dir: plugins/lighthouse
+                exec_dir: "{{.plugin_dir}}"
                 cmd: |
                   gulp
           params:
@@ -467,7 +470,7 @@ tasks:
               then:
               - task: tools.lighthouse.docker
                 arguments:
-                  dir: plugins/lighthouse
+                  dir: "{{.plugin_dir}}"
               else:
               - task: tools.lighthouse
                 arguments:
@@ -477,7 +480,7 @@ tasks:
               then:
               - task: utils.open
                 arguments:
-                  file: plugins/lighthouse/reports/report.html
+                  file: "{{.plugin_dir}}/reports/report.html"
           docker:
             parameters:
             - name: tools.lighthouse.params
@@ -504,7 +507,6 @@ tasks:
         tasks:
           exec:
             steps:
-            - script: echo "exec - K6_HOSTNAME = ${K6_HOSTNAME}"
             - if:
               - task: conditions.run_in_docker
               then:
@@ -1132,3 +1134,4 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
