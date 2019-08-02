@@ -507,18 +507,10 @@ tasks:
         tasks:
           exec:
             steps:
-            - if:
-              - task: conditions.run_in_docker
-              then:
-              - task: tools.k6.docker
-                arguments:
-                  cmd: "{{.cmd}}"
-                  env_vars: "{{ .env_vars }}"
-              else:
-              - task: tools.k6
-                arguments:
-                  cmd: "{{.cmd}}"
-                  env_vars: "{{ .env_vars }}"
+            - task: tools.k6
+              arguments:
+                cmd: "{{.cmd}}"
+                env_vars: "{{ .env_vars }}"
           docker:
             parameters:
             steps:
@@ -1134,4 +1126,6 @@ tasks:
                         - task: tools.drupal.files.fix_permissions
                           arguments:
                             site_dir: '{{.site_dir}}'
+
+
 
